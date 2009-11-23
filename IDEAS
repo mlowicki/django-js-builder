@@ -1,0 +1,39 @@
+usage: 
+
+1) user download app somehow,
+2) add django-js-builder to the INSTALLED_APPS,
+3) configure app,
+4) configure JavaScript files,
+5) after each request app checks if there were some modifications in tracked files
+and if there were changes building process is started and packages with 
+concatenated [and minified] js files are created.
+
+
+3) configure app
+    1) define packages e.g. package named "widget":
+        widget = ['libs/yui/dom.js', 'core.js', 'widget_.*\.js']
+    2) add packages to the page source:
+	
+        [...]
+        {% load js_builder %}
+	<head>
+	    {% load_js_package widget %}
+        </head>
+        [...]
+
+4) configure JavaScript files - define dependencies in JavaScript files e.g.
+        
+        single file
+	//{% require core.js %}
+        
+        all package
+        //{% require widget %} 
+
+other:
+
+Toolbar like in django-debug-toolbar with information about packages and files they contains, time,
+file sizes etc. Option for disable and enable building. Information about errors and warnings. Show
+info which packages were created during last request.
+
+Maybe building process can take too much time in some situations so there must be some option for
+disable builder maybe via GET parameter like: js_builder=0 or jsb=0.
