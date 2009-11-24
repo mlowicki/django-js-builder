@@ -61,10 +61,10 @@ other:
 
 1) Toolbar like in django-debug-toolbar with information about packages and files they contains, time,
 file sizes etc. Option for disable and enable building. Information about errors and warnings. Show
-info which packages were created during last request.
+info which packages were created during last request;
 
 2) Maybe building process can take too much time in some situations so there must be some option for
-disable builder maybe via GET parameter like: js_builder=0 or jsb=0.
+disable builder maybe via GET parameter like: js_builder=0 or jsb=0;
 
 3) Create data streams for embedding image :
 
@@ -74,5 +74,7 @@ is replaced by:
 
 el.setStyle("background-image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARQA...");
 
-4) django command for manual building e.g. on public server.
+4) django command for manual building e.g. on public server,
+
+5) disable/enable code compressor.
 
