@@ -74,3 +74,5 @@ is replaced by:
 
 el.setStyle("background-image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARQA...");
 
+4) django command for manual building e.g. on public server.
+
