@@ -1,11 +1,20 @@
 
 import os
+import re
 
 from django.conf import settings
+
+def is_regexp(path):
+    """
+    Check if path is regexp and return boolean
+    """
+    return re.search(r"[\\*?+\[\]|]", path) != None or \
+        re.search("(\.[?+*])", path) != None # .? | .+ | .*
 
 
 def check_config():
     """
+    Check if JS_BUILDER_* are correct
     """
     # check if destination directory exists
     if not os.path.exists(settings.JS_BUILDER_DEST):
