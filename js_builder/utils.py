@@ -4,6 +4,46 @@ import re
 
 from django.conf import settings
 
+settings.JS_BUILDER_SOURCE
+
+here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
+
+def match(pattern, name):
+    if is_regexp(pattern):
+        if is_special_regexp(pattern):
+            pass
+        else:
+            return False
+    else:
+        return pattern == name
+
+def find_in_dir(pattern, dir):
+    """
+    Finds directories and files matched to the pattern.
+    Return tuple:
+        ([files], [directories])
+
+    Parameters:
+        pattern - file name or regexp in string
+        dir - absolute path to the directory
+    """
+    files = map(lambda x: (x, os.path.join(dir, x)), os.listdir(dir))
+    results = ([], [])
+    for name, path in files:
+        if match(pattern, name):
+            if os.path.isdir(path):
+                results[1].append(name)
+            else:
+                results[0].append(name)
+    return results
+
+def find(path):
+    
+    sections = path.spit("/")
+
+def is_special_regexp(path):
+    return False
+
 def is_regexp(path):
     """
     Check if path is regexp and return boolean
