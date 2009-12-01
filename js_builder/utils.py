@@ -51,7 +51,6 @@ def find(pattern, root):
     """
     TODO
         doc
-        handle "**" pattern
     """
     sections = pattern.split("/")
     results = []
@@ -66,6 +65,8 @@ def find(pattern, root):
 
     if len(sections) > 1:
         for dir in dirs:
+            if is_special_regexp(sections[0]):
+                results += find(pattern, os.path.join(root, dir))
             results += find("/".join(sections[1:]), os.path.join(root, dir))
 
     return results

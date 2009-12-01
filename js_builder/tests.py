@@ -169,3 +169,45 @@ class UtilsTest(TestCase):
         os.mkdir(os.path.join(self.rootTestsDir, "d1", "cc"))
         files = find("d1/cc.*", self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
+
+    def test_find_with_special_regexp(self):
+        """
+        Tests special regexps handling
+        """
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d1"))
+        f = open(os.path.join(self.rootTestsDir, "d1", "c.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d2"))
+        f = open(os.path.join(self.rootTestsDir, "d2", "d.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d2", "d3"))
+        f = open(os.path.join(self.rootTestsDir, "d2", "d3", "e.js"), "w")
+        f.close()
+        files = find("**/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 3)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d2", "d.js") in files)
+        self.failUnless(
+            os.path.join(self.rootTestsDir, "d2", "d3", "e.js") in files)
+        #
+        # very depth directories structure
+        #
+        os.mkdir(os.path.join(self.rootTestsDir, "d2", "d3", "d4"))
+        os.mkdir(os.path.join(self.rootTestsDir, "d2", "d3", "d4", "d5"))
+        f = open(os.path.join(
+                    self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js"), "w")
+        files = find("**/[^abcde]\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 1)
+        self.failUnless(os.path.join(
+                self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
+        #
+        # none matching files
+        #
+        files = find("**/[^a-f]\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
