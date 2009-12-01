@@ -4,20 +4,24 @@ import re
 
 from django.conf import settings
 
-settings.JS_BUILDER_SOURCE
-
 here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
-def match(pattern, name):
+def match(pattern, name, root):
+    """
+    TODO
+    """
     if is_regexp(pattern):
         if is_special_regexp(pattern):
-            pass
+            if os.path.isdir(os.path.join(root, name)):
+                return True
+            else:
+                return False
         else:
-            return False
+            return re.match(pattern, name) != None
     else:
         return pattern == name
 
-def find_in_dir(pattern, dir):
+def find_in_dir(pattern, dir, onlyDirs = False):
     """
     Finds directories and files matched to the pattern.
     Return tuple:
@@ -26,22 +30,52 @@ def find_in_dir(pattern, dir):
     Parameters:
         pattern - file name or regexp in string
         dir - absolute path to the directory
+        onlyDirs - indicate if search only directories
     """
     files = map(lambda x: (x, os.path.join(dir, x)), os.listdir(dir))
     results = ([], [])
+
     for name, path in files:
-        if match(pattern, name):
-            if os.path.isdir(path):
+        if os.path.isdir(path):
+            if match(pattern, name, dir):
                 results[1].append(name)
-            else:
+        else:
+            if onlyDirs:
+                continue
+            if match(pattern, name, dir):
                 results[0].append(name)
+
     return results
 
-def find(path):
-    
-    sections = path.spit("/")
+def find(pattern, root):
+    """
+    TODO
+        doc
+        handle "**" pattern
+    """
+    sections = pattern.split("/")
+    results = []
+
+    if len(sections) > 1:
+        onlyDirs = True
+    else:
+        onlyDirs = False
+
+    files, dirs = find_in_dir(sections[0], root, onlyDirs = onlyDirs)
+    results += map(lambda file: os.path.join(root, file), files)
+
+    if len(sections) > 1:
+        for dir in dirs:
+            results += find("/".join(sections[1:]), os.path.join(root, dir))
+
+    return results
 
 def is_special_regexp(path):
+    """
+    TODO
+    """
+    if path == "**":
+        return True
     return False
 
 def is_regexp(path):
@@ -67,6 +101,7 @@ def check_config():
 
 def build_package(package_name):
     """
+    TODO
     """
     check_config()
     if not package_name in settings.JS_BUILDER_PACKAGES:
@@ -85,6 +120,7 @@ def build_package(package_name):
 
 def build_all_packages():
     """
+    TODO
     """
     check_config()
     for package_name in settings.JS_BUILDER_PACKAGES:

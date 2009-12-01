@@ -5,17 +5,29 @@ import shutil
 
 from django.test import TestCase
 
-from js_builder.utils import is_regexp, find_in_dir, here
+from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
+                              find)
+
 
 class UtilsTest(TestCase):
-    
+
     def setUp(self):
         self.rootTestsDir = here(["tests_data"])
         os.mkdir(self.rootTestsDir);
-    
+
     def tearDown(self):
         shutil.rmtree(self.rootTestsDir)
-    
+
+    def test_is_special_regexp(self):
+        """
+        Test is_special_regexp functions from utils
+        """
+        self.failUnless(is_special_regexp("**"))
+        self.failIf(is_special_regexp("file.js"))
+        self.failIf(is_special_regexp("directory"))
+        self.failIf(is_special_regexp("[abc]"))
+        self.failIf(is_special_regexp(".*"))
+
     def test_is_regexp(self):
         """
         Test is_regexp functions from utils
@@ -33,18 +45,127 @@ class UtilsTest(TestCase):
         self.failIf(is_regexp("camelCaseStyle.js"))
 
     def test_find_in_dir_single_dir(self):
+        """
+        Test find_in_dir function with directory name as parameters
+        """
         os.mkdir(os.path.join(self.rootTestsDir, "t"))
+        os.mkdir(os.path.join(self.rootTestsDir, "r"))
+        os.mkdir(os.path.join(self.rootTestsDir, "tt"))
         files, dirs = find_in_dir("t", self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
         self.failUnlessEqual(len(dirs), 1)
         self.failUnlessEqual(dirs[0], "t")
 
     def test_find_in_dir_single_js_file(self):
+        """
+        Test find_in_dir function with file name as parameters
+        """
         f = open(os.path.join(self.rootTestsDir, "t.js"), "w")
         f.close()
+        f = open(os.path.join(self.rootTestsDir, "r.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "tt.js"), "w")
+        f.close()
         os.mkdir(os.path.join(self.rootTestsDir, "t"))
+        os.mkdir(os.path.join(self.rootTestsDir, "r"))
         files, dirs = find_in_dir("t.js", self.rootTestsDir)
         self.failUnlessEqual(len(files), 1)
         self.failUnlessEqual(files[0], "t.js")
         self.failUnlessEqual(len(dirs), 0)
 
+    def test_find_in_dir_regexp(self):
+        """
+        Test find_in_dir function with regexps as parameters
+        """
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "c.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "d.js"), "w")
+        f.close()
+        files, dirs = find_in_dir("[abc]\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 3)
+        self.failUnless("a.js" in files)
+        self.failUnless("b.js" in files)
+        self.failUnless("c.js" in files)
+        self.failUnlessEqual(len(dirs), 0)
+
+        files, dirs = find_in_dir(".*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 4)
+        self.failUnless("a.js" in files)
+        self.failUnless("b.js" in files)
+        self.failUnless("c.js" in files)
+        self.failUnless("d.js" in files)
+        self.failUnlessEqual(len(dirs), 0)
+
+        os.mkdir(os.path.join(self.rootTestsDir, "e"))
+        os.mkdir(os.path.join(self.rootTestsDir, "f"))
+        files, dirs = find_in_dir(".*", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 4)
+        self.failUnless("a.js" in files)
+        self.failUnless("b.js" in files)
+        self.failUnless("c.js" in files)
+        self.failUnless("d.js" in files)
+        self.failUnlessEqual(len(dirs), 2)
+        self.failUnless("e" in dirs)
+        self.failUnless("f" in dirs)
+
+    def test_find_in_dir_special_regexp(self):
+        """
+        Test find_in_dir function with special regexps as parameters
+        """
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "c.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d"))
+        os.mkdir(os.path.join(self.rootTestsDir, "ee"))
+        files, dirs = find_in_dir("**", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
+        self.failUnlessEqual(len(dirs), 2)
+        self.failUnless("d" in dirs)
+        self.failUnless("ee" in dirs)
+
+    def test_find(self):
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d1"))
+        f = open(os.path.join(self.rootTestsDir, "d1", "c.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d2"))
+        f = open(os.path.join(self.rootTestsDir, "d2", "d.js"), "w")
+        f.close()
+        files = find(".*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 2)
+        self.failUnless(os.path.join(self.rootTestsDir, "a.js") in files)
+        self.failUnless(os.path.join(self.rootTestsDir, "b.js") in files)
+
+        files = find("d[1-2]/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 2)
+        self.failUnless(os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+        self.failUnless(os.path.join(self.rootTestsDir, "d2", "d.js") in files)
+
+        files = find("d1/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 1)
+        self.failUnless(os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+
+        files = find(".*/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 2)
+        self.failUnless(os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+        self.failUnless(os.path.join(self.rootTestsDir, "d2", "d.js") in files)
+
+        files = find("d3/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
+
+        files = find("d1/.*/c.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
+
+        os.mkdir(os.path.join(self.rootTestsDir, "d1", "cc"))
+        files = find("d1/cc.*", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
