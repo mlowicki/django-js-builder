@@ -8,7 +8,14 @@ here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
 def match(pattern, name, root):
     """
-    TODO
+    Check if name matches the given pattern
+
+    Parameters:
+        pattern - regular expression or normal string
+        name - file/dir name
+        root - absolute path to directory
+    Return:
+        boolean
     """
     if is_regexp(pattern):
         if is_special_regexp(pattern):
@@ -31,6 +38,8 @@ def find_in_dir(pattern, dir, onlyDirs = False):
         pattern - file name or regexp in string
         dir - absolute path to the directory
         onlyDirs - indicate if search only directories
+    Return:
+        absolute paths to the found files
     """
     files = map(lambda x: (x, os.path.join(dir, x)), os.listdir(dir))
     results = ([], [])
@@ -49,8 +58,14 @@ def find_in_dir(pattern, dir, onlyDirs = False):
 
 def find(pattern, root):
     """
-    TODO
-        doc
+    Find files in the current directory and subdirectories which match
+    the pattern.
+
+    Parameters:
+        pattern - pattern for matching files/directories e.g. **/d/[a-z]\.js
+        root - current directory
+    Return:
+        absolute paths
     """
     sections = pattern.split("/")
     results = []
@@ -71,11 +86,27 @@ def find(pattern, root):
 
     return results
 
-def is_special_regexp(path):
+def find_package_files(list, root):
     """
-    TODO
+    Find all files required by package definitions.
+
+    Params:
+        list of regular expressions or names
+    Return:
+        absolute paths to the files
+
+    Function doesn't return files required by files dependencies.
     """
-    if path == "**":
+    files = []
+    for item in list:
+        files += find(item, root)
+    return files
+
+def is_special_regexp(s):
+    """
+    Check is string is special regular expression
+    """
+    if s == "**":
         return True
     return False
 
@@ -85,7 +116,6 @@ def is_regexp(path):
     """
     return re.search(r"[\\*?+\[\]|]", path) != None or \
         re.search("(\.[?+*])", path) != None # .? | .+ | .*
-
 
 def check_config():
     """
@@ -99,29 +129,31 @@ def check_config():
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
-
 def build_package(package_name):
     """
-    TODO
+    Build package with 'package_name' name
+
+    This might be useful http://www.djangosnippets.org/snippets/1011/
+    during the tests.
     """
     check_config()
     if not package_name in settings.JS_BUILDER_PACKAGES:
         raise Exception("Unknown package: %s" % package_name)
     else:
-        print "building %s package ..." % package_name
         package_file = open(
             os.path.join(settings.JS_BUILDER_DEST, package_name + ".js"), "w")
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
         for item in package_cfg:
-            f = open(os.path.join(settings.JS_BUILDER_SOURCE, item), "r")
-            package_file.write(f.read())
-            f.close()
+            files = find_package_files(item, settings.JS_BUILDER_SOURCE)
+            for file in files:
+                f = open(file, "r")
+                package_file.write(f.read())
+                f.close()
         package_file.close()
-
 
 def build_all_packages():
     """
-    TODO
+    Build all packages from JS_BUILDER_PACKAGES
     """
     check_config()
     for package_name in settings.JS_BUILDER_PACKAGES:
