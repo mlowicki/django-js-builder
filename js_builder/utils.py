@@ -71,6 +71,17 @@ def find(pattern, root):
 
     return results
 
+def find_package_files(list, root):
+    """
+    Find all files required by package definitions.
+
+    Function doesn't return files required by files dependencies.
+    """
+    files = []
+    for item in list:
+        files += find(item, root)
+    return files
+
 def is_special_regexp(path):
     """
     TODO
@@ -98,7 +109,6 @@ def check_config():
     if not os.path.exists(settings.JS_BUILDER_SOURCE):
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
-
 
 def build_package(package_name):
     """

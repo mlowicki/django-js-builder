@@ -6,7 +6,7 @@ import shutil
 from django.test import TestCase
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
-                              find)
+                              find, find_package_files)
 
 
 class UtilsTest(TestCase):
@@ -210,4 +210,35 @@ class UtilsTest(TestCase):
         # none matching files
         #
         files = find("**/[^a-f]\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
+
+    def test_find_package_files(self):
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d1"))
+        f = open(os.path.join(self.rootTestsDir, "d1", "c.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d2"))
+        f = open(os.path.join(self.rootTestsDir, "d2", "d.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d3"))
+        f = open(os.path.join(self.rootTestsDir, "d3", "e.js"), "w")
+        f.close()
+        os.mkdir(os.path.join(self.rootTestsDir, "d3", "d4"))
+        f = open(os.path.join(self.rootTestsDir, "d3", "d4", "f.js"), "w")
+        files = find_package_files(["**/[df]", "[a-z]\.js"], self.rootTestsDir)
+        self.failUnlessEqual(len(files), 4)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "a.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "b.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d2", "d.js") in files)
+        self.failUnless(
+                os.path.join(self.rootTestsDir, "d3", "d4", "f.js") in files)
+
+        files = find_package_files(["**/[^a-h]", "[g-z]\.js"],
+                                                            self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
