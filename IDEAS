@@ -78,4 +78,4 @@ el.setStyle("background-image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAA
 
 5) disable/enable code compressor.
 
-6) *** pattern. ** + files from root directory
+6) *** pattern. ** + files from root directory (DONE)

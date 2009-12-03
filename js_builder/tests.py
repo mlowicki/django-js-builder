@@ -206,10 +206,40 @@ class UtilsTest(TestCase):
         self.failUnlessEqual(len(files), 1)
         self.failUnless(os.path.join(
                 self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
+
+        files = find("**/d3/e.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 1)
+        self.failUnless(os.path.join(
+                            self.rootTestsDir, "d2", "d3", "e.js") in files)
         #
         # none matching files
         #
         files = find("**/[^a-f]\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 0)
+        #
+        # "***" pattern tests
+        #
+        files = find("***/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 6)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "a.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "b.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d2", "d.js") in files)
+        self.failUnless(
+                os.path.join(self.rootTestsDir, "d2", "d3", "e.js") in files)
+        self.failUnless(os.path.join(
+                self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
+
+        files = find("***/d1/c.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 1)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+
+        files = find("***/d2/c.js", self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
 
     def test_find_package_files(self):

@@ -28,7 +28,7 @@ def match(pattern, name, root):
     else:
         return pattern == name
 
-def find_in_dir(pattern, dir, onlyDirs = False):
+def find_in_dir(pattern, dir, onlyDirs = False, onlyFiles = False):
     """
     Finds directories and files matched to the pattern.
     Return tuple:
@@ -37,15 +37,16 @@ def find_in_dir(pattern, dir, onlyDirs = False):
     Parameters:
         pattern - file name or regexp in string
         dir - absolute path to the directory
-        onlyDirs - indicate if search only directories
+        onlyDirs - search only directories
+        onlyFiles - search only files
     Return:
-        absolute paths to the found files
+        names of the found files
     """
     files = map(lambda x: (x, os.path.join(dir, x)), os.listdir(dir))
     results = ([], [])
 
     for name, path in files:
-        if os.path.isdir(path):
+        if os.path.isdir(path) and not onlyFiles:
             if match(pattern, name, dir):
                 results[1].append(name)
         else:
@@ -75,13 +76,17 @@ def find(pattern, root):
     else:
         onlyDirs = False
 
+    if sections[0] == "***":
+        results += find("/".join(sections[1:]), root)
+        sections[0] = "**"
+
     files, dirs = find_in_dir(sections[0], root, onlyDirs = onlyDirs)
     results += map(lambda file: os.path.join(root, file), files)
 
     if len(sections) > 1:
         for dir in dirs:
             if is_special_regexp(sections[0]):
-                results += find(pattern, os.path.join(root, dir))
+                results += find("/".join(sections), os.path.join(root, dir))
             results += find("/".join(sections[1:]), os.path.join(root, dir))
 
     return results
@@ -106,7 +111,7 @@ def is_special_regexp(s):
     """
     Check is string is special regular expression
     """
-    if s == "**":
+    if s == "**" or s == "***":
         return True
     return False
 
