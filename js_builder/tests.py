@@ -6,16 +6,21 @@ import shutil
 from django.test import TestCase
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
-                              find, find_package_files)
+                              find, find_package_files, build_package)
+from js_builder.tests_utils import SettingsTestCase
 
 
-class UtilsTest(TestCase):
+class UtilsTest(SettingsTestCase):
 
     def setUp(self):
         self.rootTestsDir = here(["tests_data"])
-        os.mkdir(self.rootTestsDir);
+        if os.path.isdir(self.rootTestsDir):
+            shutil.rmtree(self.rootTestsDir)
+        else:
+            os.mkdir(self.rootTestsDir)
 
     def tearDown(self):
+        super(UtilsTest, self).tearDown()
         shutil.rmtree(self.rootTestsDir)
 
     def test_is_special_regexp(self):
@@ -272,3 +277,19 @@ class UtilsTest(TestCase):
         files = find_package_files(["**/[^a-h]", "[g-z]\.js"],
                                                             self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
+
+    def test_build_package(self):
+        os.mkdir(os.path.join(self.rootTestsDir, "data"))
+        os.mkdir(os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "dest"))
+
+        self.settings_manager.set(JS_BUILDER_PACKAGES={"p1": []},
+                JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
+                JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+        # wrong package name
+        self.failUnlessRaises(Exception, build_package, "wrong package name")
+        self.failUnlessEqual(
+                    os.listdir(os.path.join(self.rootTestsDir, "dest")), [])
+        # empty package
+        build_package("p1")
+
