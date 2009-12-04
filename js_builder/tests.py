@@ -216,6 +216,15 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(len(files), 1)
         self.failUnless(os.path.join(
                             self.rootTestsDir, "d2", "d3", "e.js") in files)
+
+        files = find("d2/**/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 2)
+        self.failUnless(os.path.join(
+                            self.rootTestsDir, "d2", "d3", "e.js") in files)
+        self.failUnless(os.path.join(
+                self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
+
+        
         #
         # none matching files
         #
@@ -243,6 +252,15 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(len(files), 1)
         self.failUnless(
                     os.path.join(self.rootTestsDir, "d1", "c.js") in files)
+
+        files = find("d2/***/.*\.js", self.rootTestsDir)
+        self.failUnlessEqual(len(files), 3)
+        self.failUnless(os.path.join(
+                            self.rootTestsDir, "d2", "d.js") in files)
+        self.failUnless(os.path.join(
+                            self.rootTestsDir, "d2", "d3", "e.js") in files)
+        self.failUnless(os.path.join(
+                self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
 
         files = find("***/d2/c.js", self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
