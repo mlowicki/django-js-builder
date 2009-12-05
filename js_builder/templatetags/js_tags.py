@@ -1,6 +1,8 @@
 
 from django import template
 
+from js_builder.utils import build_package
+
 register = template.Library()
 
 @register.tag
@@ -11,7 +13,9 @@ def js_package(parser, token):
     except ValueError:
         msg = '%r tag requires a single argument' % token.split_contents()[0]
         raise template.TemplateSyntaxError(msg)
-    return JSPackageNode(package_name[1:-1])
+    package_name = package_name[1:-1]
+    build_package(package_name)
+    return JSPackageNode(package_name)
 
 
 class JSPackageNode(template.Node):

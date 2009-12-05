@@ -5,6 +5,7 @@ import shutil
 
 from django.test import TestCase
 from django import template
+from django.conf import settings
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package)
@@ -316,11 +317,32 @@ class UtilsTest(SettingsTestCase):
         # empty package
         build_package("p1")
 
-    def test_js_backage_tag(self):
-        html = "{% load js_builder %}"
+    def test_js_package_tag(self):
+        """
+        """
+        self.settings_manager.set(
+            JS_BUILDER_PACKAGES={"p1": [], "p2": ["[ab]\.js"]},
+            JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "dest"))
+
+        html = "{% load js_tags %}"
         html += "<script type='text/javascript' "
         html += "src='{% js_package 'p1' %}'></script>"
         t = template.Template(html)
         c = template.Context({})
         self.failUnlessEqual(t.render(c),
                         "<script type='text/javascript' src='p1.js'></script>")
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("a\n")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("b\n")
+        f.close()
+        t = template.Template("{% load js_tags %}{% js_package 'p2' %}")
+        c = template.Context({})
+        self.failUnlessEqual(t.render(c), "p2.js")
+        f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
+        self.failUnlessEqual(f.read(), "a\nb\n")
