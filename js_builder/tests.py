@@ -4,6 +4,7 @@ import os
 import shutil
 
 from django.test import TestCase
+from django import template
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package)
@@ -297,6 +298,10 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(len(files), 0)
 
     def test_build_package(self):
+        #
+        # TODO:
+        #     more tests
+        #
         os.mkdir(os.path.join(self.rootTestsDir, "data"))
         os.mkdir(os.path.join(self.rootTestsDir, "source"))
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
@@ -311,3 +316,11 @@ class UtilsTest(SettingsTestCase):
         # empty package
         build_package("p1")
 
+    def test_js_backage_tag(self):
+        html = "{% load js_builder %}"
+        html += "<script type='text/javascript' "
+        html += "src='{% js_package 'p1' %}'></script>"
+        t = template.Template(html)
+        c = template.Context({})
+        self.failUnlessEqual(t.render(c),
+                        "<script type='text/javascript' src='p1.js'></script>")
