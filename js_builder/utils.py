@@ -3,6 +3,7 @@ import os
 import re
 
 from django.conf import settings
+from django import template
 
 here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
@@ -152,8 +153,10 @@ def build_package(package_name):
 
         for file in files:
             f = open(file, "r")
-            package_file.write(f.read())
+            t = template.Template(f.read())
             f.close()
+            c = template.Context({})
+            package_file.write(t.render(c))
         package_file.close()
 
 def build_all_packages():

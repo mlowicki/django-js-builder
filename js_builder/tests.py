@@ -346,3 +346,26 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb\n")
+
+    def test_js_require_tag(self):
+        """
+        """
+        self.settings_manager.set(
+            JS_BUILDER_PACKAGES={"p1": ["a.js"], "p2": ["b.js"]},
+            JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "dest"))
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("{% load js_tags %}")
+        f.write("{% js_require 'p2' %}")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("b\n")
+        f.close()
+        t = template.Template("{% load js_tags %}{% js_package 'p1' %}")
+        c = template.Context({})
+        self.failUnlessEqual(t.render(c), "p1.js")
+        f = open(os.path.join(settings.JS_BUILDER_DEST, "p1.js"), "r")
+        self.failUnlessEqual(f.read(), "b\n")
