@@ -347,7 +347,7 @@ class UtilsTest(SettingsTestCase):
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb\n")
 
-    def test_js_require_tag(self):
+    def _test_js_require_tag(self):
         """
         """
         self.settings_manager.set(
