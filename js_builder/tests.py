@@ -307,7 +307,8 @@ class UtilsTest(SettingsTestCase):
         os.mkdir(os.path.join(self.rootTestsDir, "source"))
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
 
-        self.settings_manager.set(JS_BUILDER_PACKAGES={"p1": []},
+        self.settings_manager.set(
+                JS_BUILDER_PACKAGES={"p1": [], "p2": ["a.js"]},
                 JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
                 JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
         # wrong package name
@@ -316,6 +317,17 @@ class UtilsTest(SettingsTestCase):
                     os.listdir(os.path.join(self.rootTestsDir, "dest")), [])
         # empty package
         build_package("p1")
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("// require b.js\n")
+        f.write("// require c.js\n")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "c.js"), "w")
+        f.close()
+        build_package("p2")
+
 
     def test_js_package_tag(self):
         """
@@ -348,6 +360,7 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(f.read(), "a\nb\n")
 
     def test_get_file_dependencies(self):
+        self.settings_manager.set(JS_BUILDER_SOURCE=self.rootTestsDir)
         f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
         f.write("// require b.js\n")
         f.write("//require c.js\n")
@@ -356,5 +369,8 @@ class UtilsTest(SettingsTestCase):
         dependencies = get_file_dependencies(
                                     os.path.join(self.rootTestsDir, "a.js"))
         self.failUnlessEqual(len(dependencies), 2)
-        self.failUnless("b.js" in dependencies)
-        self.failUnless("c.js" in dependencies)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "b.js") in dependencies)
+        self.failUnless(
+                    os.path.join(self.rootTestsDir, "c.js") in dependencies)
+

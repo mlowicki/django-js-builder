@@ -149,8 +149,21 @@ def get_file_dependencies(path):
         if r == None:
             break
         else:
-            results.append(r.groupdict()["file"])
+            results.append(os.path.join(
+                            settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
     return results
+
+def get_package_dependencies(files):
+    dependencies = {}
+    
+    while len(files) > 0:
+        fs = get_file_dependencies(files[0])
+        dependencies[files[0]] = fs
+        files.remove(files[0])
+        for f in fs:
+            if not f in files and not dependencies.has_key(f):
+                files.append(f)
+    return dependencies
 
 def build_package(package_name):
     """
@@ -167,13 +180,9 @@ def build_package(package_name):
             os.path.join(settings.JS_BUILDER_DEST, package_name + ".js"), "w")
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
-
-        for file in files:
-            f = open(file, "r")
-            t = template.Template(f.read())
-            f.close()
-            c = template.Context({})
-            package_file.write(t.render(c))
+        dependencies = get_package_dependencies(
+            map(lambda f: os.path.join(settings.JS_BUILDER_SOURCE, f), files))
+        print dependencies
         package_file.close()
 
 def build_all_packages():
