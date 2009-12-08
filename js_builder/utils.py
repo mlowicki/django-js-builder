@@ -134,6 +134,23 @@ def check_config():
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
+def get_file_dependencies(path):
+    """
+    Return file dependencies
+
+    Parameters:
+        path - absolute path to the file
+    """
+    f = open(path, "r")
+    results = []
+    while True:
+        r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
+        if r == None:
+            break
+        else:
+            results.append(r.groupdict()["file"])
+    return results
+
 def build_package(package_name):
     """
     Build package with 'package_name' name

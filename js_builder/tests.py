@@ -8,7 +8,7 @@ from django import template
 from django.conf import settings
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
-                              find, find_package_files, build_package)
+            find, find_package_files, build_package, get_file_dependencies)
 from js_builder.tests_utils import SettingsTestCase
 
 
@@ -346,3 +346,15 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb\n")
+
+    def test_get_file_dependencies(self):
+        f = open(os.path.join(self.rootTestsDir, "a.js"), "w")
+        f.write("// require b.js\n")
+        f.write("//require c.js\n")
+        f.write("// comment\n")
+        f.close()
+        dependencies = get_file_dependencies(
+                                    os.path.join(self.rootTestsDir, "a.js"))
+        self.failUnlessEqual(len(dependencies), 2)
+        self.failUnless("b.js" in dependencies)
+        self.failUnless("c.js" in dependencies)
