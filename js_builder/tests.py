@@ -377,23 +377,21 @@ class UtilsTest(SettingsTestCase):
                     os.path.join(self.rootTestsDir, "c.js") in dependencies)
 
     def test_topological_sorting(self):
-        graph = DependencyGraph({"a": ["b"]}, {"b": ["a"]})
+        graph = DependencyGraph({"a": ["b"]})
         results = topological_sorting(graph)
 
         self.failUnlessEqual(len(results), 2)
         self.failUnlessEqual(results[0], "a")
         self.failUnlessEqual(results[1], "b")
 
-        graph = DependencyGraph({"c": ["a", "b"], "b": ["a"]},
-                                                {"a": ["b", "c"], "b": ["c"]})
+        graph = DependencyGraph({"c": ["a", "b"], "b": ["a"]})
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 3)
         self.failUnlessEqual(results[0], "c")
         self.failUnlessEqual(results[1], "b")
         self.failUnlessEqual(results[2], "a")
 
-        graph = DependencyGraph({"c": ["b"], "b": ["a", "d"], "a": ["d"]},
-                                    {"a": ["b"], "b": ["c"], "d": ["b", "a"]})
+        graph = DependencyGraph({"c": ["b"], "b": ["a", "d"], "a": ["d"]})
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 4)
         self.failUnlessEqual(results[0], "c")
@@ -401,7 +399,6 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(results[2], "a")
         self.failUnlessEqual(results[3], "d")
 
-        graph = DependencyGraph({"c": ["b"], "b": ["a"], "a": ["c"]},
-                                        {"a": ["b"], "b": ["c"], "c": ["a"]})
+        graph = DependencyGraph({"c": ["b"], "b": ["a"], "a": ["c"]})
         self.failUnlessRaises(Exception, topological_sorting, graph)
 

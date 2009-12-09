@@ -155,16 +155,25 @@ def get_file_dependencies(path):
 
 class DependencyGraph(object):
 
-    def __init__(self, in_edges, out_edges):
+    def __init__(self, in_edges):
         self.in_edges = in_edges
-        self.out_edges = out_edges
+        # create out_edges dict
+        self.out_edges = {}
+        for in_edge in in_edges:
+            for out_edge in in_edges[in_edge]:
+
+                if not self.out_edges.has_key(out_edge):
+                    self.out_edges[out_edge] = []
+                if not in_edge in self.out_edges[out_edge]:
+                    self.out_edges[out_edge].append(in_edge)
+        # create a list of all edges in graph
         self.edges = []
 
-        for e in in_edges:
+        for e in self.in_edges:
             if not e in self.edges:
                 self.edges.append(e)
 
-        for e in out_edges:
+        for e in self.out_edges:
             if not e in self.edges:
                 self.edges.append(e)
 
