@@ -20,8 +20,7 @@ class UtilsTest(SettingsTestCase):
         self.rootTestsDir = here(["tests_data"])
         if os.path.isdir(self.rootTestsDir):
             shutil.rmtree(self.rootTestsDir)
-        else:
-            os.mkdir(self.rootTestsDir)
+        os.mkdir(self.rootTestsDir)
 
     def tearDown(self):
         super(UtilsTest, self).tearDown()
@@ -350,16 +349,29 @@ class UtilsTest(SettingsTestCase):
                         "<script type='text/javascript' src='p1.js'></script>")
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
-        f.write("a\n")
+        f.write("a")
         f.close()
         f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
-        f.write("b\n")
+        f.write("b")
         f.close()
         t = template.Template("{% load js_tags %}{% js_package 'p2' %}")
         c = template.Context({})
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb\n")
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("// require b.js\n")
+        f.write("a")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("b")
+        f.close()
+        t = template.Template("{% load js_tags %}{% js_package 'p2' %}")
+        c = template.Context({})
+        self.failUnlessEqual(t.render(c), "p2.js")
+        f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
+        self.failUnlessEqual(f.read(), "b\na\n")
 
     def test_get_file_dependencies(self):
         self.settings_manager.set(JS_BUILDER_SOURCE=self.rootTestsDir)
@@ -381,17 +393,17 @@ class UtilsTest(SettingsTestCase):
         results = topological_sorting(graph)
 
         self.failUnlessEqual(len(results), 2)
-        self.failUnlessEqual(results[0], "a")
-        self.failUnlessEqual(results[1], "b")
+        self.failUnlessEqual(results[0], "b")
+        self.failUnlessEqual(results[1], "a")
 
-        graph = DependencyGraph({"c": ["a", "b"], "b": ["a"]})
+        graph = DependencyGraph({"a": ["b", "c"], "b": ["c"]})
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 3)
         self.failUnlessEqual(results[0], "c")
         self.failUnlessEqual(results[1], "b")
         self.failUnlessEqual(results[2], "a")
 
-        graph = DependencyGraph({"c": ["b"], "b": ["a", "d"], "a": ["d"]})
+        graph = DependencyGraph({"a": ["b"], "b": ["c"], "d": ["b", "a"]})
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 4)
         self.failUnlessEqual(results[0], "c")
@@ -399,6 +411,11 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(results[2], "a")
         self.failUnlessEqual(results[3], "d")
 
-        graph = DependencyGraph({"c": ["b"], "b": ["a"], "a": ["c"]})
+        graph = DependencyGraph({"a": ["b"], "b": ["c"], "c": ["a"]})
         self.failUnlessRaises(Exception, topological_sorting, graph)
 
+        graph = DependencyGraph({"a": [], "b": []})
+        results = topological_sorting(graph)
+        self.failUnlessEqual(len(results), 2)
+        self.failUnless("a" in results)
+        self.failUnless("b" in results)

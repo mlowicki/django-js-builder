@@ -135,37 +135,57 @@ def check_config():
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
-def get_file_dependencies(path):
+def get_file_dependencies(path, removeRequires=True):
     """
     Return file dependencies
 
     Parameters:
         path - absolute path to the file
     """
-    f = open(path, "r")
     results = []
-    while True:
-        r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
-        if r == None:
-            break
-        else:
-            results.append(os.path.join(
+    if removeRequires == False:
+        f = open(path, "r")
+        while True:
+            r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
+            if r == None:
+                break
+            else:
+                results.append(os.path.join(
+                                settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
+        f.close()
+    else:
+        f = open(path, "r")
+        lines = f.readlines()
+        f.close()
+        f = open(path, "w")
+        check = True
+        for line in lines:
+            if check == False:
+                f.write(line + "\n")
+            else:
+                r = re.match(r"//\ *require\ (?P<file>.*)", line)
+                if r == None:
+                    check = False
+                    f.write(line + "\n")
+                else:
+                    results.append(os.path.join(
                             settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
+        f.close()
     return results
 
 class DependencyGraph(object):
 
-    def __init__(self, in_edges):
-        self.in_edges = in_edges
-        # create out_edges dict
-        self.out_edges = {}
-        for in_edge in in_edges:
-            for out_edge in in_edges[in_edge]:
+    def __init__(self, out_edges):
+        self.out_edges = out_edges
+        # create in_edges dict
+        self.in_edges = {}
+        for out_edge in out_edges:
+            for in_edge in out_edges[out_edge]:
 
-                if not self.out_edges.has_key(out_edge):
-                    self.out_edges[out_edge] = []
-                if not in_edge in self.out_edges[out_edge]:
-                    self.out_edges[out_edge].append(in_edge)
+                if not self.in_edges.has_key(in_edge):
+                    self.in_edges[in_edge] = []
+                if not out_edge in self.in_edges[in_edge]:
+                    self.in_edges[in_edge].append(out_edge)
         # create a list of all edges in graph
         self.edges = []
 
@@ -204,6 +224,9 @@ class DependencyGraph(object):
     def remove_edge(self, outNode, inNode):
         self.get_outgoing_edges(outNode).remove(inNode)
         self.get_incoming_edges(inNode).remove(outNode)
+        return self.remove_isolated_nodes()
+
+    def remove_isolated_nodes(self):
         removed_nodes = []
         for e in reversed(self.edges):
             if not self.has_incoming_edges(e) and not self.has_outgoing_edges(e):
@@ -230,7 +253,7 @@ def topological_sorting(graph):
     Parameters:
         graph - DependencyGraph
     """
-    sorted_nodes = []
+    sorted_nodes = graph.remove_isolated_nodes()
 
     while graph.has_nodes_with_no_incoming_edges():
         a = graph.nodes_with_no_incoming_edges()[0]
@@ -278,7 +301,13 @@ def build_package(package_name):
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
         dependencies = get_package_dependencies(
             map(lambda f: os.path.join(settings.JS_BUILDER_SOURCE, f), files))
-        print dependencies
+        graph = DependencyGraph(dependencies)
+        sorted_files = topological_sorting(graph)
+
+        for file in sorted_files:
+            f = open(file, "r")
+            package_file.write(f.read())
+            f.close()
         package_file.close()
 
 def build_all_packages():
