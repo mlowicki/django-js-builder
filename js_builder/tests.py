@@ -8,7 +8,9 @@ from django import template
 from django.conf import settings
 
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
-            find, find_package_files, build_package, get_file_dependencies)
+                              find, find_package_files, build_package,
+                              get_file_dependencies, DependencyGraph,
+                              topological_sorting)
 from js_builder.tests_utils import SettingsTestCase
 
 
@@ -373,4 +375,33 @@ class UtilsTest(SettingsTestCase):
                     os.path.join(self.rootTestsDir, "b.js") in dependencies)
         self.failUnless(
                     os.path.join(self.rootTestsDir, "c.js") in dependencies)
+
+    def test_topological_sorting(self):
+        graph = DependencyGraph({"a": ["b"]}, {"b": ["a"]})
+        results = topological_sorting(graph)
+
+        self.failUnlessEqual(len(results), 2)
+        self.failUnlessEqual(results[0], "a")
+        self.failUnlessEqual(results[1], "b")
+
+        graph = DependencyGraph({"c": ["a", "b"], "b": ["a"]},
+                                                {"a": ["b", "c"], "b": ["c"]})
+        results = topological_sorting(graph)
+        self.failUnlessEqual(len(results), 3)
+        self.failUnlessEqual(results[0], "c")
+        self.failUnlessEqual(results[1], "b")
+        self.failUnlessEqual(results[2], "a")
+
+        graph = DependencyGraph({"c": ["b"], "b": ["a", "d"], "a": ["d"]},
+                                    {"a": ["b"], "b": ["c"], "d": ["b", "a"]})
+        results = topological_sorting(graph)
+        self.failUnlessEqual(len(results), 4)
+        self.failUnlessEqual(results[0], "c")
+        self.failUnlessEqual(results[1], "b")
+        self.failUnlessEqual(results[2], "a")
+        self.failUnlessEqual(results[3], "d")
+
+        graph = DependencyGraph({"c": ["b"], "b": ["a"], "a": ["c"]},
+                                        {"a": ["b"], "b": ["c"], "c": ["a"]})
+        self.failUnlessRaises(Exception, topological_sorting, graph)
 
