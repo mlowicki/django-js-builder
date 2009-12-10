@@ -98,7 +98,7 @@ def find_package_files(list, root):
     Function doesn't return files required by files dependencies
 
     Params:
-        list <list> - ist of regular expressions or names
+        list <list> - list of regular expressions or names
     Return:
         list - absolute paths to the files
     """
@@ -143,7 +143,7 @@ def check_config():
         raise Exception("JS_BUILDER_SOURCE is not set")
 
     if not hasattr(settings, "JS_BUILDER_PACKAGES"):
-        raise Exception("JS_BUILDEr_PACKAGES is not set")
+        raise Exception("JS_BUILDER_PACKAGES is not set")
 
     if not os.path.exists(settings.JS_BUILDER_DEST):
         raise Exception("Destination directory doesn't exists: %s" %
