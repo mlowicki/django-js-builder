@@ -12,11 +12,11 @@ def match(pattern, name, root):
     Check if name matches the given pattern
 
     Parameters:
-        pattern - regular expression or normal string
-        name - file/dir name
-        root - absolute path to directory
+        pattern <string> - regular expression or normal string
+        name <string> - file/dir name
+        root <string> - absolute path to directory
     Return:
-        boolean
+        bool
     """
     if is_regexp(pattern):
         if is_special_regexp(pattern):
@@ -29,29 +29,27 @@ def match(pattern, name, root):
     else:
         return pattern == name
 
-def find_in_dir(pattern, dir, onlyDirs = False, onlyFiles = False):
+def find_in_dir(pattern, dir, only_dirs = False, only_files = False):
     """
     Finds directories and files matched to the pattern.
-    Return tuple:
-        ([files], [directories])
 
     Parameters:
-        pattern - file name or regexp in string
-        dir - absolute path to the directory
-        onlyDirs - search only directories
-        onlyFiles - search only files
+        pattern <string> - file name or regexp in string
+        dir <string> - absolute path to the directory
+        only_dirs <bool> - search only directories
+        only_files <bool> - search only files
     Return:
-        names of the found files
+        tuple - ([files], [directories])
     """
     files = map(lambda x: (x, os.path.join(dir, x)), os.listdir(dir))
     results = ([], [])
 
     for name, path in files:
-        if os.path.isdir(path) and not onlyFiles:
+        if os.path.isdir(path) and not only_files:
             if match(pattern, name, dir):
                 results[1].append(name)
         else:
-            if onlyDirs:
+            if only_dirs:
                 continue
             if match(pattern, name, dir):
                 results[0].append(name)
@@ -64,24 +62,25 @@ def find(pattern, root):
     the pattern.
 
     Parameters:
-        pattern - pattern for matching files/directories e.g. **/d/[a-z]\.js
-        root - current directory
+        pattern <string> - pattern for matching files/directories
+                           e.g. **/d/[a-z]\.js
+        root <string> - current directory
     Return:
-        absolute paths
+        list - absolute paths
     """
     sections = pattern.split("/")
     results = []
 
     if len(sections) > 1:
-        onlyDirs = True
+        only_dirs = True
     else:
-        onlyDirs = False
+        only_dirs = False
 
     if sections[0] == "***":
         results += find("/".join(sections[1:]), root)
         sections[0] = "**"
 
-    files, dirs = find_in_dir(sections[0], root, onlyDirs = onlyDirs)
+    files, dirs = find_in_dir(sections[0], root, only_dirs = only_dirs)
     results += map(lambda file: os.path.join(root, file), files)
 
     if len(sections) > 1:
@@ -96,12 +95,12 @@ def find_package_files(list, root):
     """
     Find all files required by package definitions.
 
-    Params:
-        list of regular expressions or names
-    Return:
-        absolute paths to the files
+    Function doesn't return files required by files dependencies
 
-    Function doesn't return files required by files dependencies.
+    Params:
+        list <list> - ist of regular expressions or names
+    Return:
+        list - absolute paths to the files
     """
     files = []
     for item in list:
@@ -111,6 +110,11 @@ def find_package_files(list, root):
 def is_special_regexp(s):
     """
     Check is string is special regular expression
+
+    Parameters:
+        s <string>
+    Return:
+        <bool>
     """
     if s == "**" or s == "***":
         return True
@@ -119,15 +123,28 @@ def is_special_regexp(s):
 def is_regexp(path):
     """
     Check if path is regexp and return boolean
+
+    Parameters:
+        path <string>
+    Return:
+        <bool>
     """
     return re.search(r"[\\*?+\[\]|]", path) != None or \
         re.search("(\.[?+*])", path) != None # .? | .+ | .*
 
 def check_config():
     """
-    Check if JS_BUILDER_* are correct
+    Check if JS_BUILDER_* are set and correct
     """
-    # check if destination directory exists
+    if not hasattr(settings, "JS_BUILDER_DEST"):
+        raise Exception("JS_BUILDER_DEST is not set")
+
+    if not hasattr(settings, "JS_BUILDER_SOURCE"):
+        raise Exception("JS_BUILDER_SOURCE is not set")
+
+    if not hasattr(settings, "JS_BUILDER_PACKAGES"):
+        raise Exception("JS_BUILDEr_PACKAGES is not set")
+
     if not os.path.exists(settings.JS_BUILDER_DEST):
         raise Exception("Destination directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_DEST)
@@ -135,15 +152,16 @@ def check_config():
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
-def get_file_dependencies(path, removeRequires=True):
+def get_file_dependencies(path, remove_requires=True):
     """
     Return file dependencies
 
     Parameters:
-        path - absolute path to the file
+        path <string> -  absolute path to the file
+        remove_requires <bool>
     """
     results = []
-    if removeRequires == False:
+    if remove_requires == False:
         f = open(path, "r")
         while True:
             r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
@@ -151,7 +169,7 @@ def get_file_dependencies(path, removeRequires=True):
                 break
             else:
                 results.append(os.path.join(
-                                settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
+                        settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
         f.close()
     else:
         f = open(path, "r")
@@ -251,7 +269,10 @@ class DependencyGraph(object):
 def topological_sorting(graph):
     """
     Parameters:
-        graph - DependencyGraph
+        graph <DependencyGraph>
+
+    Return:
+        list
     """
     sorted_nodes = graph.remove_isolated_nodes()
 
@@ -273,6 +294,14 @@ def topological_sorting(graph):
         return sorted_nodes
 
 def get_package_dependencies(files):
+    """
+    Return all files needed to build the package
+
+    Parameters:
+        files <list>
+    Return
+        list
+    """
     dependencies = {}
     
     while len(files) > 0:
@@ -284,14 +313,16 @@ def get_package_dependencies(files):
                 files.append(f)
     return dependencies
 
-def build_package(package_name):
+def build_package(package_name, check_configuration=True):
     """
     Build package with 'package_name' name
 
-    This might be useful http://www.djangosnippets.org/snippets/1011/
-    during the tests.
+    Parameters:
+        package_name <str>
+        check_config <bool>
     """
-    check_config()
+    if check_configuration:
+        check_config()
     if not package_name in settings.JS_BUILDER_PACKAGES:
         raise Exception("Unknown package: %s" % package_name)
     else:
@@ -316,4 +347,4 @@ def build_all_packages():
     """
     check_config()
     for package_name in settings.JS_BUILDER_PACKAGES:
-        build_package(package_name)
+        build_package(package_name, False)
