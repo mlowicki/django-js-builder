@@ -334,7 +334,8 @@ class UtilsTest(SettingsTestCase):
         """
         """
         self.settings_manager.set(
-            JS_BUILDER_PACKAGES={"p1": [], "p2": ["[ab]\.js"]},
+            JS_BUILDER_PACKAGES={"p1": [], "p2": ["[ab]\.js"],
+                                 "p3": ["[a-z]\.js"]},
             JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
             JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
         os.mkdir(os.path.join(self.rootTestsDir, "source"))
@@ -372,6 +373,21 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "b\na\n")
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("// require b.js\n")
+        f.write("a")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("// require c.js\n")
+        f.write("b")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("// require a.js\n")
+        f.write("c")
+        f.close()
+        self.failUnlessRaises(Exception, template.Template,
+                              "{% load js_tags %}{% js_package 'p3' %}")
 
     def test_get_file_dependencies(self):
         self.settings_manager.set(JS_BUILDER_SOURCE=self.rootTestsDir)
