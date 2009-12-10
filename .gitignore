@@ -1,6 +1,7 @@
 *pyc
 *pyo
 *~
+*swp
 .project
 .pydevproject
 *egg-info
