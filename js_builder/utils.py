@@ -191,79 +191,126 @@ def get_file_dependencies(path, remove_requires=True):
         f.close()
     return results
 
-class DependencyGraph(object):
 
-    def __init__(self, out_edges):
+class GraphEdge(object):
+
+    def __init__(self, start, end):
+        self.start = start
+        self.end = end
+
+
+class GraphNode(object):
+    """
+    Class represents node in graph
+    """
+    def __init__(self, name, out_edges=[], in_edges=[]):
+        self.name = name
+        self.in_edges = in_edges
         self.out_edges = out_edges
-        # create in_edges dict
-        self.in_edges = {}
-        for out_edge in out_edges:
-            for in_edge in out_edges[out_edge]:
 
-                if not self.in_edges.has_key(in_edge):
-                    self.in_edges[in_edge] = []
-                if not out_edge in self.in_edges[in_edge]:
-                    self.in_edges[in_edge].append(out_edge)
-        # create a list of all edges in graph
-        self.edges = []
+    def add_in_edge(self, name):
+        if not name in self.in_edges:
+            self.in_edges.append(name)
 
-        for e in self.in_edges:
-            if not e in self.edges:
-                self.edges.append(e)
+    def add_out_edge(self, name):
+        if not name in self.out_edges:
+            self.out_edges.append(name)
 
-        for e in self.out_edges:
-            if not e in self.edges:
-                self.edges.append(e)
+    def get_name(self):
+        return self.name
 
-    def has_edges(self):
-        return len(self.get_edges()) != 0
+    def get_outgoing_edges(self):
+        return self.out_edges
 
-    def get_edges(self):
-        return self.edges
+    def get_incoming_edges(self):
+        return self.in_edges
 
-    def get_outgoing_edges(self, node):
-        try:
-            return self.out_edges[node]
-        except KeyError, e:
-            return []
+    def remove_out_edge(self, node):
+        self.out_edges.remove(node)
 
-    def get_incoming_edges(self, node):
-        try:
-            return self.in_edges[node]
-        except KeyError, e:
-            return []
+    def remove_in_edge(self, node):
+        self.in_edges.remove(node)
 
-    def has_incoming_edges(self, node):
-        return len(self.get_incoming_edges(node)) > 0
+    def has_edge(self):
+        return self.has_incoming_edges() or self.has_outgoing_edges()
 
-    def has_outgoing_edges(self, node):
-        return len(self.get_outgoing_edges(node)) > 0
+    def has_incoming_edge(self):
+        return len(self.in_edges) > 0
 
-    def remove_edge(self, outNode, inNode):
-        self.get_outgoing_edges(outNode).remove(inNode)
-        self.get_incoming_edges(inNode).remove(outNode)
+    def has_outgoing_edge(self):
+        return len(self.out_edges) > 0
+
+
+class DependencyGraph(object):
+    """
+    Class for represeting dependency graph
+    """
+    def __init__(self, edges, isolated_nodes=[]):
+        self.nodes = isolated_nodes
+
+        for edge in edges:
+            if not edge.start in map(lambda n: n.get_name(), self.nodes):
+                self.nodes.append(GraphNode(edge.start, [edge.end], []))
+            else:
+                for node in self.nodes:
+                    if node.get_name() == edge.start:
+                        node.add_out_edge(edge.end)
+
+            if not edge.end in map(lambda n: n.get_name(), self.nodes):
+                self.nodes.append(GraphNode(edge.end, [], [edge.start]))
+            else:
+                for node in self.nodes:
+                    if node.get_name() == edge.end:
+                        node.add_in_edge(edge.start)
+
+    def has_edge(self):
+        for node in self.nodes:
+            if node.has_edge():
+                return True
+        return False
+
+    def get_node(self, name):
+        for node in self.nodes:
+            if node.get_name() == name:
+                return node
+        return None
+
+    def remove_edge(self, start_node, end_node):
+        if type(start_node) == type(""):
+            start_node = self.get_node(start_node)
+        if type(end_node) == type(""):
+            end_node = self.get_node(end_node)
+        end_node.remove_in_edge(start_node.get_name())
+        start_node.remove_out_edge(end_node.get_name())
         return self.remove_isolated_nodes()
 
     def remove_isolated_nodes(self):
         removed_nodes = []
-        for e in reversed(self.edges):
-            if not self.has_incoming_edges(e) and not self.has_outgoing_edges(e):
-                self.edges.remove(e)
-                removed_nodes.append(e)
-                if e in self.in_edges:
-                    del self.in_edges[e]
-                if e in self.out_edges:
-                    del self.out_edges[e]
+        for node in reversed(self.nodes):
+            if not node.has_incoming_edge() and not node.has_outgoing_edge():
+                self.nodes.remove(node)
+                removed_nodes.append(node)
         return removed_nodes
 
-    def has_nodes_with_no_incoming_edges(self):
-        return len(self.nodes_with_no_incoming_edges()) > 0
+    def has_nodes_with_no_incoming_edge(self):
+        """
+        Check if there are some nods without incoming nodes
+        Return:
+            bool
+        """
+        return len(self.nodes_with_no_incoming_edge()) > 0
 
-    def nodes_with_no_incoming_edges(self):
+    def nodes_with_no_incoming_edge(self):
+        """
+        Return list of nodes without any incoming edges
+
+        Return:
+            list
+        """
         results = []
-        for e in self.edges:
-            if not self.has_incoming_edges(e):
-                results.append(e)
+        for node in self.nodes:
+            if not node.has_incoming_edge():
+                results.append(node)
         return results
 
 def topological_sorting(graph):
@@ -274,20 +321,21 @@ def topological_sorting(graph):
     Return:
         list
     """
-    sorted_nodes = graph.remove_isolated_nodes()
+    sorted_nodes = map(lambda n: n.get_name(), graph.remove_isolated_nodes())
 
-    while graph.has_nodes_with_no_incoming_edges():
-        a = graph.nodes_with_no_incoming_edges()[0]
-        sorted_nodes.append(a)
+    while graph.has_nodes_with_no_incoming_edge():
+        a = graph.nodes_with_no_incoming_edge()[0]
+        sorted_nodes.append(a.get_name())
 
-        for node in reversed(graph.get_outgoing_edges(a)):
-            removed_nodes = graph.remove_edge(a, node)
+        for node in reversed(a.get_outgoing_edges()):
+            removed_nodes = map(lambda n: n.get_name(),
+                                graph.remove_edge(a, node))
 
-            if a in removed_nodes:
-                removed_nodes.remove(a)
+            if a.get_name() in removed_nodes:
+                removed_nodes.remove(a.get_name())
             sorted_nodes.extend(removed_nodes)
 
-    if graph.has_edges():
+    if graph.has_edge():
         raise Exception("Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
@@ -332,7 +380,15 @@ def build_package(package_name, check_configuration=True):
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
         dependencies = get_package_dependencies(
             map(lambda f: os.path.join(settings.JS_BUILDER_SOURCE, f), files))
-        graph = DependencyGraph(dependencies)
+        edges = []
+        isolated_nodes = []
+        for k in dependencies:
+            if len(dependencies[k]) == 0:
+                isolated_nodes.append(GraphNode(k, [], []))
+            else:
+                for node in dependencies[k]:
+                    edges.append(GraphEdge(k, node))
+        graph = DependencyGraph(edges, isolated_nodes)
         sorted_files = topological_sorting(graph)
 
         for file in sorted_files:

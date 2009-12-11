@@ -10,7 +10,7 @@ from django.conf import settings
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package,
                               get_file_dependencies, DependencyGraph,
-                              topological_sorting)
+                              GraphEdge, GraphNode, topological_sorting)
 from js_builder.tests_utils import SettingsTestCase
 
 
@@ -426,21 +426,27 @@ class UtilsTest(SettingsTestCase):
                     os.path.join(self.rootTestsDir, "c.js") in dependencies)
 
     def test_topological_sorting(self):
-        graph = DependencyGraph({"a": ["b"]})
+        
+        graph = DependencyGraph([GraphEdge("a", "b")])
         results = topological_sorting(graph)
 
         self.failUnlessEqual(len(results), 2)
         self.failUnlessEqual(results[0], "b")
         self.failUnlessEqual(results[1], "a")
 
-        graph = DependencyGraph({"a": ["b", "c"], "b": ["c"]})
+        graph = DependencyGraph([GraphEdge("a", "b"),
+                                 GraphEdge("b", "c"),
+                                 GraphEdge("a", "c")])
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 3)
         self.failUnlessEqual(results[0], "c")
         self.failUnlessEqual(results[1], "b")
         self.failUnlessEqual(results[2], "a")
 
-        graph = DependencyGraph({"a": ["b"], "b": ["c"], "d": ["b", "a"]})
+        graph = DependencyGraph([GraphEdge("a", "b"),
+                                 GraphEdge("b", "c"),
+                                 GraphEdge("d", "b"),
+                                 GraphEdge("d", "a")])
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 4)
         self.failUnlessEqual(results[0], "c")
@@ -448,10 +454,12 @@ class UtilsTest(SettingsTestCase):
         self.failUnlessEqual(results[2], "a")
         self.failUnlessEqual(results[3], "d")
 
-        graph = DependencyGraph({"a": ["b"], "b": ["c"], "c": ["a"]})
+        graph = DependencyGraph([GraphEdge("a", "b"),
+                                 GraphEdge("b", "c"),
+                                 GraphEdge("c", "a")])
         self.failUnlessRaises(Exception, topological_sorting, graph)
 
-        graph = DependencyGraph({"a": [], "b": []})
+        graph = DependencyGraph([], [GraphNode("a"), GraphNode("b")])
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 2)
         self.failUnless("a" in results)
