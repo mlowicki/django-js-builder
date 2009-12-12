@@ -359,7 +359,7 @@ class UtilsTest(SettingsTestCase):
         c = template.Context({})
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
-        self.failUnlessEqual(f.read(), "a\nb\n")
+        self.failUnlessEqual(f.read(), "a\nb")
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
         f.write("// require b.js\n")
@@ -372,7 +372,7 @@ class UtilsTest(SettingsTestCase):
         c = template.Context({})
         self.failUnlessEqual(t.render(c), "p2.js")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
-        self.failUnlessEqual(f.read(), "b\na\n")
+        self.failUnlessEqual(f.read(), "b\na")
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
         f.write("// require b.js\n")
@@ -408,7 +408,7 @@ class UtilsTest(SettingsTestCase):
         f.close()
         t = template.Template("{% load js_tags%}{% js_package 'p3' %}")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p3.js"), "r")
-        self.failUnlessEqual(f.read(), "d\nc\nb\na\n")
+        self.failUnlessEqual(f.read(), "d\nc\nb\na")
 
     def test_get_file_dependencies(self):
         self.settings_manager.set(JS_BUILDER_SOURCE=self.rootTestsDir)
@@ -425,8 +425,9 @@ class UtilsTest(SettingsTestCase):
         self.failUnless(
                     os.path.join(self.rootTestsDir, "c.js") in dependencies)
 
-    def test_topological_sorting(self):
-        
+    def test_topological_sorting(self):        
+        """
+        """
         graph = DependencyGraph([GraphEdge("a", "b")])
         results = topological_sorting(graph)
 

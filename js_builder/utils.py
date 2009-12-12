@@ -176,24 +176,23 @@ def get_file_dependencies(path, remove_requires=True):
         lines = f.readlines()
         f.close()
         f = open(path, "w")
-        check = True
-        for line in lines:
-            if check == False:
-                f.write(line + "\n")
+
+        for i in range(len(lines)):
+            r = re.match(r"//\ *require\ (?P<file>.*)", lines[i])
+            if r == None:
+                f.write("\n".join(lines[i:]))
+                break
             else:
-                r = re.match(r"//\ *require\ (?P<file>.*)", line)
-                if r == None:
-                    check = False
-                    f.write(line + "\n")
-                else:
-                    results.append(os.path.join(
+                results.append(os.path.join(
                             settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
         f.close()
     return results
 
 
 class GraphEdge(object):
-
+    """
+    Class represents edge in graph
+    """
     def __init__(self, start, end):
         self.start = start
         self.end = end
@@ -391,9 +390,11 @@ def build_package(package_name, check_configuration=True):
         graph = DependencyGraph(edges, isolated_nodes)
         sorted_files = topological_sorting(graph)
 
-        for file in sorted_files:
-            f = open(file, "r")
+        for i in range(len(sorted_files)):
+            f = open(sorted_files[i], "r")
             package_file.write(f.read())
+            if i != len(sorted_files) -1:
+                package_file.write("\n")
             f.close()
         package_file.close()
 
