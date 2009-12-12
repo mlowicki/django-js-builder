@@ -175,7 +175,6 @@ def get_file_dependencies(path, remove_requires=True):
     else:
         f = open(path, "r")
         lines = f.readlines()
-        
         f.close()
         f = open(path, "w")
 
@@ -430,6 +429,7 @@ def build_package(package_name, check_configuration=True, **options):
                         edges.append(GraphEdge(k, node))
             graph = DependencyGraph(edges, isolated_nodes)
             sorted_files = topological_sorting(graph)
+
             for i in range(len(sorted_files)):
                 f = open(sorted_files[i], "r")
                 package_file.write(f.read())
