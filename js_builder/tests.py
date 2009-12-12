@@ -498,7 +498,7 @@ class UtilsTest(SettingsTestCase):
 
         package_file = os.path.join(self.rootTestsDir, "dest", "p1.js")
         old_m_time = os.path.getmtime(package_file)
-        time.sleep(3)
+        time.sleep(2)
         self.failUnlessEqual(t.render(c), "p1.js")
         self.failUnlessEqual(os.path.getmtime(package_file), old_m_time)
 
