@@ -1,6 +1,7 @@
 
 import os
 import re
+import commands
 
 from django.conf import settings
 from django import template
@@ -382,8 +383,6 @@ def package_needs_rebuilding(files, package_name):
         if os.path.getmtime(f) > package_m_time:
             return True
     return False
-
-import commands
 
 def compress_package(package_name):
     """
