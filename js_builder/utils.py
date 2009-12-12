@@ -437,8 +437,13 @@ def build_package(package_name, check_configuration=True, **options):
                     package_file.write("\n")
                 f.close()
             package_file.close()
-    if options.get("compress", False):
-        compress_package(package_name)
+
+            if options.get("compress", False):
+                compress_package(package_name)
+        else:
+            if not os.path.exists(os.path.join(settings.JS_BUILDER_DEST,
+                package_name + "-min.js")) and options.get("compress", False):
+                compress_package(package_name)
 
 def build_all_packages(**options):
     """
