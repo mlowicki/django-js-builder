@@ -382,8 +382,13 @@ def package_needs_rebuilding(files, package_name):
             return True
     return False
 
+def compress_package(package_name):
+    """
+        TODO
+    """
+    #print "compress package...", package_name
 
-def build_package(package_name, check_configuration=True):
+def build_package(package_name, check_configuration=True, **options):
     """
     Build package with 'package_name' name
 
@@ -423,11 +428,13 @@ def build_package(package_name, check_configuration=True):
                     package_file.write("\n")
                 f.close()
             package_file.close()
+    if options.get("compress", False):
+        compress_package(package_name)
 
-def build_all_packages():
+def build_all_packages(**options):
     """
     Build all packages from JS_BUILDER_PACKAGES
     """
     check_config()
     for package_name in settings.JS_BUILDER_PACKAGES:
-        build_package(package_name, False)
+        build_package(package_name, False, **options)
