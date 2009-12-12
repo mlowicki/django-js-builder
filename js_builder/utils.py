@@ -360,6 +360,29 @@ def get_package_dependencies(files):
                 files.append(f)
     return dependencies
 
+def get_unique_files(dependencies):
+    files = []
+
+    for k, v in dependencies.iteritems():
+        if not k in files:
+            files.append(k)
+        for item in v:
+            if not item in files:
+                files.append(item)
+    return files
+
+def package_needs_rebuilding(files, package_name):
+    package_file = os.path.join(
+                            settings.JS_BUILDER_DEST, package_name + ".js")
+    if not os.path.exists(package_file):
+        return True
+    package_m_time = os.path.getmtime(package_file)
+    for f in files:
+        if os.path.getmtime(f) > package_m_time:
+            return True
+    return False
+
+
 def build_package(package_name, check_configuration=True):
     """
     Build package with 'package_name' name
@@ -373,30 +396,33 @@ def build_package(package_name, check_configuration=True):
     if not package_name in settings.JS_BUILDER_PACKAGES:
         raise Exception("Unknown package: %s" % package_name)
     else:
-        package_file = open(
-            os.path.join(settings.JS_BUILDER_DEST, package_name + ".js"), "w")
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
         dependencies = get_package_dependencies(
             map(lambda f: os.path.join(settings.JS_BUILDER_SOURCE, f), files))
-        edges = []
-        isolated_nodes = []
-        for k in dependencies:
-            if len(dependencies[k]) == 0:
-                isolated_nodes.append(GraphNode(k, [], []))
-            else:
-                for node in dependencies[k]:
-                    edges.append(GraphEdge(k, node))
-        graph = DependencyGraph(edges, isolated_nodes)
-        sorted_files = topological_sorting(graph)
 
-        for i in range(len(sorted_files)):
-            f = open(sorted_files[i], "r")
-            package_file.write(f.read())
-            if i != len(sorted_files) -1:
-                package_file.write("\n")
-            f.close()
-        package_file.close()
+        if package_needs_rebuilding(get_unique_files(dependencies),
+                                    package_name):
+            edges = []
+            package_file = open(os.path.join(
+                        settings.JS_BUILDER_DEST, package_name + ".js"), "w")
+            isolated_nodes = []
+            for k in dependencies:
+                if len(dependencies[k]) == 0:
+                    isolated_nodes.append(GraphNode(k, [], []))
+                else:
+                    for node in dependencies[k]:
+                        edges.append(GraphEdge(k, node))
+            graph = DependencyGraph(edges, isolated_nodes)
+            sorted_files = topological_sorting(graph)
+    
+            for i in range(len(sorted_files)):
+                f = open(sorted_files[i], "r")
+                package_file.write(f.read())
+                if i != len(sorted_files) -1:
+                    package_file.write("\n")
+                f.close()
+            package_file.close()
 
 def build_all_packages():
     """
