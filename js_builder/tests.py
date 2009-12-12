@@ -228,15 +228,11 @@ class UtilsTest(SettingsTestCase):
         self.failUnless(os.path.join(
                 self.rootTestsDir, "d2", "d3", "d4", "d5", "f.js") in files)
 
-        
-        #
         # none matching files
-        #
         files = find("**/[^a-f]\.js", self.rootTestsDir)
         self.failUnlessEqual(len(files), 0)
-        #
+
         # "***" pattern tests
-        #
         files = find("***/.*\.js", self.rootTestsDir)
         self.failUnlessEqual(len(files), 6)
         self.failUnless(
@@ -313,10 +309,12 @@ class UtilsTest(SettingsTestCase):
                 JS_BUILDER_PACKAGES={"p1": [], "p2": ["a.js"]},
                 JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
                 JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+
         # wrong package name
         self.failUnlessRaises(Exception, build_package, "wrong package name")
         self.failUnlessEqual(
                     os.listdir(os.path.join(self.rootTestsDir, "dest")), [])
+
         # empty package
         build_package("p1")
 
@@ -344,12 +342,11 @@ class UtilsTest(SettingsTestCase):
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
 
         html = "{% load js_tags %}"
-        html += "<script type='text/javascript' "
-        html += "src='{% js_package 'p1' %}'></script>"
+        html += "{% js_package 'p1' %}"
         t = template.Template(html)
         c = template.Context({})
-        self.failUnlessEqual(t.render(c),
-                        "<script type='text/javascript' src='p1.js'></script>")
+        self.failUnlessEqual(t.render(c),"<script type='text/javascript' " + \
+                             "src='" + settings.MEDIA_URL + "p1.js'></script>")
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
         f.write("a")
@@ -359,7 +356,8 @@ class UtilsTest(SettingsTestCase):
         f.close()
         t = template.Template("{% load js_tags %}{% js_package 'p2' %}")
         c = template.Context({})
-        self.failUnlessEqual(t.render(c), "p2.js")
+        self.failUnlessEqual(t.render(c), "<script type='text/javascript' " +\
+                            "src='" + settings.MEDIA_URL + "p2.js'></script>")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb")
 
@@ -372,7 +370,8 @@ class UtilsTest(SettingsTestCase):
         f.close()
         t = template.Template("{% load js_tags %}{% js_package 'p3' %}")
         c = template.Context({})
-        self.failUnlessEqual(t.render(c), "p3.js")
+        self.failUnlessEqual(t.render(c), "<script type='text/javascript' " +\
+                            "src='" + settings.MEDIA_URL + "p3.js'></script>")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p3.js"), "r")
         self.failUnlessEqual(f.read(), "b\na")
 
@@ -479,12 +478,12 @@ class UtilsTest(SettingsTestCase):
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
 
         html = "{% load js_tags %}"
-        html += "<script type='text/javascript' "
-        html += "src='{% js_package 'p1' %}'></script>"
+        html += "{% js_package 'p1' %}"
         t = template.Template(html)
         c = template.Context({})
         self.failUnlessEqual(t.render(c),
-                        "<script type='text/javascript' src='p1.js'></script>")
+                             "<script type='text/javascript' src='" +\
+                             settings.MEDIA_URL + "p1.js'></script>")
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
         f.write("a")
@@ -494,12 +493,16 @@ class UtilsTest(SettingsTestCase):
         f.close()
         t = template.Template("{% load js_tags %}{% js_package 'p1' %}")
         c = template.Context({})
-        self.failUnlessEqual(t.render(c), "p1.js")
+        self.failUnlessEqual(t.render(c), 
+                             "<script type='text/javascript' src='" +\
+                             settings.MEDIA_URL + "p1.js'></script>")
 
         package_file = os.path.join(self.rootTestsDir, "dest", "p1.js")
         old_m_time = os.path.getmtime(package_file)
         time.sleep(2)
-        self.failUnlessEqual(t.render(c), "p1.js")
+        self.failUnlessEqual(t.render(c), 
+                             "<script type='text/javascript' src='" +\
+                             settings.MEDIA_URL + "p1.js'></script>")
         self.failUnlessEqual(os.path.getmtime(package_file), old_m_time)
 
         f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
@@ -507,7 +510,9 @@ class UtilsTest(SettingsTestCase):
         f.close()
         t = template.Template("{% load js_tags %}{% js_package 'p1' %}")
         c = template.Context({})
-        self.failUnlessEqual(t.render(c), "p1.js")
+        self.failUnlessEqual(t.render(c), 
+                             "<script type='text/javascript' src='" +\
+                             settings.MEDIA_URL + "p1.js'></script>")
         current_m_time = os.path.getmtime(package_file)
         current_time = int(time.time())
         self.failUnless(current_m_time <= current_time and
