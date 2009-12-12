@@ -174,13 +174,14 @@ def get_file_dependencies(path, remove_requires=True):
     else:
         f = open(path, "r")
         lines = f.readlines()
+        
         f.close()
         f = open(path, "w")
 
         for i in range(len(lines)):
             r = re.match(r"//\ *require\ (?P<file>.*)", lines[i])
             if r == None:
-                f.write("\n".join(lines[i:]))
+                f.write("".join(lines[i:]))
                 break
             else:
                 results.append(os.path.join(
@@ -382,11 +383,21 @@ def package_needs_rebuilding(files, package_name):
             return True
     return False
 
+import commands
+
 def compress_package(package_name):
     """
         TODO
     """
-    #print "compress package...", package_name
+    in_file = os.path.join(settings.JS_BUILDER_DEST, package_name + ".js")
+    out_file = os.path.join(settings.JS_BUILDER_DEST, package_name + "-min.js")
+    command = "java -jar " + here(
+                ("yuicompressor-2.4.2", "yuicompressor-2.4.2.jar",))
+    command += " " + in_file + " -o " + out_file
+    status, output = commands.getstatusoutput(command)
+    if status != 0:
+        print "There was some problems with JavaScript compression"
+        print output
 
 def build_package(package_name, check_configuration=True, **options):
     """
@@ -420,7 +431,6 @@ def build_package(package_name, check_configuration=True, **options):
                         edges.append(GraphEdge(k, node))
             graph = DependencyGraph(edges, isolated_nodes)
             sorted_files = topological_sorting(graph)
-    
             for i in range(len(sorted_files)):
                 f = open(sorted_files[i], "r")
                 package_file.write(f.read())
