@@ -410,7 +410,7 @@ def build_package(package_name, check_configuration=True, **options):
     if not package_name in settings.JS_BUILDER_PACKAGES:
         raise Exception("Unknown package: %s" % package_name)
     else:
-        compress = getattr(settings, "JS_BUILDER_COMPRESS", False)
+        compress = options.get("compress", False)
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
         dependencies = get_package_dependencies(
@@ -438,8 +438,9 @@ def build_package(package_name, check_configuration=True, **options):
                     package_file.write("\n")
                 f.close()
             package_file.close()
-
-            if compress:
+        else:
+            if compress and not os.path.exists(os.path.join(
+                        settings.JS_BUILDER_DEST, package_name + "-min.js")):
                 compress_package(package_name)
 
 def build_all_packages(**options):

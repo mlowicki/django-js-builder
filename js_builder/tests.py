@@ -16,7 +16,11 @@ from js_builder.tests_utils import SettingsTestCase
 
 
 class UtilsTest(SettingsTestCase):
-
+    """
+    TODO:
+        tests for checking if right files are created according to
+        GET, JS_BUILDER_COMPERSS and DEBUG values
+    """
     def setUp(self):
         self.rootTestsDir = here(["tests_data"])
         if os.path.isdir(self.rootTestsDir):
@@ -337,7 +341,8 @@ class UtilsTest(SettingsTestCase):
                                  "p3": ["a.js", "b.js"], "p4": ["[a-z]\.js"],
                                  "p5": ["[a-z]\.js"]},
             JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
-            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"),
+            DEBUG=True)
         os.mkdir(os.path.join(self.rootTestsDir, "source"))
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
 
@@ -357,7 +362,7 @@ class UtilsTest(SettingsTestCase):
         t = template.Template("{% load js_tags %}{% js_package 'p2' %}")
         c = template.Context({})
         self.failUnlessEqual(t.render(c), "<script type='text/javascript' " +\
-                            "src='" + settings.MEDIA_URL + "p2.js'></script>")
+                        "src='" + settings.MEDIA_URL + "p2.js'></script>")
         f = open(os.path.join(settings.JS_BUILDER_DEST, "p2.js"), "r")
         self.failUnlessEqual(f.read(), "a\nb")
 
@@ -473,7 +478,8 @@ class UtilsTest(SettingsTestCase):
         self.settings_manager.set(
             JS_BUILDER_PACKAGES={"p1": ["[a-z]\.js"]},
             JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
-            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"),
+            DEBUG=True)
         os.mkdir(os.path.join(self.rootTestsDir, "source"))
         os.mkdir(os.path.join(self.rootTestsDir, "dest"))
 
