@@ -383,7 +383,7 @@ class UtilsTest(SettingsTestCase):
         f.write("// require c.js\n")
         f.write("b")
         f.close()
-        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f = open(os.path.join(self.rootTestsDir, "source", "c.js"), "w")
         f.write("// require a.js\n")
         f.write("c")
         f.close()

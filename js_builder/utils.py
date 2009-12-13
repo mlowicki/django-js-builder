@@ -388,7 +388,7 @@ def compress_package(package_name):
         TODO
     """
     in_file = os.path.join(settings.JS_BUILDER_DEST, package_name + ".js")
-    out_file = os.path.join(settings.JS_BUILDER_DEST, package_name + "-min.js")
+    out_file = in_file
     command = "java -jar " + here(
                 ("yuicompressor-2.4.2", "yuicompressor-2.4.2.jar",))
     command += " " + in_file + " -o " + out_file
@@ -410,6 +410,7 @@ def build_package(package_name, check_configuration=True, **options):
     if not package_name in settings.JS_BUILDER_PACKAGES:
         raise Exception("Unknown package: %s" % package_name)
     else:
+        compress = getattr(settings, "JS_BUILDER_COMPRESS", False)
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
         files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
         dependencies = get_package_dependencies(
@@ -438,11 +439,7 @@ def build_package(package_name, check_configuration=True, **options):
                 f.close()
             package_file.close()
 
-            if options.get("compress", False):
-                compress_package(package_name)
-        else:
-            if not os.path.exists(os.path.join(settings.JS_BUILDER_DEST,
-                package_name + "-min.js")) and options.get("compress", False):
+            if compress:
                 compress_package(package_name)
 
 def build_all_packages(**options):
