@@ -16,15 +16,7 @@ def js_package(parser, token):
     except ValueError:
         msg = '%r tag requires a single argument' % token.split_contents()[0]
         raise template.TemplateSyntaxError(msg)
-    package_name = package_name[1:-1]
-
-    if settings.DEBUG == True:
-        #
-        # Remove compress=True. Compressed files should be created only
-        # if request requires that
-        #
-        build_package(package_name, compress=True)
-    return JSPackageNode(package_name)
+    return JSPackageNode(package_name[1:-1])
 
 
 class JSPackageNode(template.Node):
@@ -37,6 +29,7 @@ class JSPackageNode(template.Node):
                 settings.MEDIA_URL + self.package_name + "-min.js'></script>"
 
         if settings.DEBUG == False:
+            build_package(self.package_name, compress=True)
             return compressed_package
 
         uncompressed_package = "<script type='text/javascript' src='" +\
@@ -45,13 +38,16 @@ class JSPackageNode(template.Node):
         if "request" in context:
             compress = context["request"].GET.get("compress", "False")
             if compress == "True":
+                build_package(self.package_name, compress=True)
                 return compressed_package
             elif compress == "False":
+                build_package(self.package_name)
                 return uncompressed_package
 
         if hasattr(settings, "JS_BUILDER_COMPRESS"):
             if getattr(settings, "JS_BUILDER_COMPRESS"):
+                build_package(self.package_name, compress=True)
                 return compressed_package
-            else:
-                return uncompressed_package
+
+        build_package(self.package_name)
         return uncompressed_package

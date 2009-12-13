@@ -153,42 +153,25 @@ def check_config():
         raise Exception("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
-def get_file_dependencies(path, remove_requires=True):
+
+def get_file_dependencies(path):
     """
     Return file dependencies
 
     Parameters:
         path <string> -  absolute path to the file
-        remove_requires <bool>
     """
     results = []
-    if remove_requires == False:
-        f = open(path, "r")
-        while True:
-            r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
-            if r == None:
-                break
-            else:
-                results.append(os.path.join(
-                        settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
-        f.close()
-    else:
-        f = open(path, "r")
-        lines = f.readlines()
-        f.close()
-        f = open(path, "w")
-
-        for i in range(len(lines)):
-            r = re.match(r"//\ *require\ (?P<file>.*)", lines[i])
-            if r == None:
-                f.write("".join(lines[i:]))
-                break
-            else:
-                results.append(os.path.join(
-                            settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
-        f.close()
+    f = open(path, "r")
+    while True:
+        r = re.match(r"//\ *require\ (?P<file>.*)", f.readline())
+        if r == None:
+            break
+        else:
+            results.append(os.path.join(
+                    settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
+    f.close()
     return results
-
 
 class GraphEdge(object):
     """
@@ -388,7 +371,7 @@ def compress_package(package_name):
         TODO
     """
     in_file = os.path.join(settings.JS_BUILDER_DEST, package_name + ".js")
-    out_file = in_file
+    out_file = os.path.join(settings.JS_BUILDER_DEST, package_name + "-min.js")
     command = "java -jar " + here(
                 ("yuicompressor-2.4.2", "yuicompressor-2.4.2.jar",))
     command += " " + in_file + " -o " + out_file
@@ -438,6 +421,9 @@ def build_package(package_name, check_configuration=True, **options):
                     package_file.write("\n")
                 f.close()
             package_file.close()
+
+            if compress:
+                compress_package(package_name)
         else:
             if compress and not os.path.exists(os.path.join(
                         settings.JS_BUILDER_DEST, package_name + "-min.js")):
