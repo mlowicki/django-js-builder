@@ -2,6 +2,7 @@
 import os
 import re
 import commands
+import logging
 
 from django.conf import settings
 from django import template
@@ -138,19 +139,19 @@ def check_config():
     Check if JS_BUILDER_* are set and correct
     """
     if not hasattr(settings, "JS_BUILDER_DEST"):
-        raise Exception("JS_BUILDER_DEST is not set")
+        logging.error("JS_BUILDER_DEST is not set")
 
     if not hasattr(settings, "JS_BUILDER_SOURCE"):
-        raise Exception("JS_BUILDER_SOURCE is not set")
+        logging.error("JS_BUILDER_SOURCE is not set")
 
     if not hasattr(settings, "JS_BUILDER_PACKAGES"):
-        raise Exception("JS_BUILDER_PACKAGES is not set")
+        logging.error("JS_BUILDER_PACKAGES is not set")
 
     if not os.path.exists(settings.JS_BUILDER_DEST):
-        raise Exception("Destination directory doesn't exists: %s" %
+        loggging.error("Destination directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_DEST)
     if not os.path.exists(settings.JS_BUILDER_SOURCE):
-        raise Exception("Source directory doesn't exists: %s" %
+        logging.error("Source directory doesn't exists: %s" %
                                                     settings.JS_BUILDER_SOURCE)
 
 
@@ -215,7 +216,7 @@ class GraphNode(object):
         self.in_edges.remove(node)
 
     def has_edge(self):
-        return self.has_incoming_edges() or self.has_outgoing_edges()
+        return self.has_incoming_edge() or self.has_outgoing_edge()
 
     def has_incoming_edge(self):
         return len(self.in_edges) > 0
@@ -319,7 +320,7 @@ def topological_sorting(graph):
             sorted_nodes.extend(removed_nodes)
 
     if graph.has_edge():
-        raise Exception("Dependency graph has at least one cycle")
+        logging.error("Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
         return sorted_nodes
@@ -377,8 +378,8 @@ def compress_package(package_name):
     command += " " + in_file + " -o " + out_file
     status, output = commands.getstatusoutput(command)
     if status != 0:
-        print "There was some problems with JavaScript compression"
-        print output
+        logging.error("There was some problems with JavaScript compression")
+        logging.error(output)
 
 def build_package(package_name, check_configuration=True, **options):
     """
@@ -388,10 +389,12 @@ def build_package(package_name, check_configuration=True, **options):
         package_name <str>
         check_config <bool>
     """
+    log_filename = os.path.join(settings.JS_BUILDER_DEST, "js_builder.log")
+    logging.basicConfig(filename=log_filename, level=logging.ERROR)
     if check_configuration:
         check_config()
     if not package_name in settings.JS_BUILDER_PACKAGES:
-        raise Exception("Unknown package: %s" % package_name)
+        logging.error("Unknown package: %s" % package_name)
     else:
         compress = options.get("compress", False)
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
