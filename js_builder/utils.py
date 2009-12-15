@@ -321,7 +321,8 @@ def topological_sorting(graph):
             sorted_nodes.extend(removed_nodes)
 
     if graph.has_edge():
-        logging.error("Dependency graph has at least one cycle")
+        logger = logging.getLogger("topological sorting")
+        logger.error("Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
         return sorted_nodes
@@ -379,9 +380,27 @@ def compress_package(package_name):
     command += " " + in_file + " -o " + out_file
     status, output = commands.getstatusoutput(command)
     if status != 0:
-        logging.error("There was some problems with JavaScript compression")
+        logger = loggging.getLogger("yui compressor")
         logging.error(output)
 
+
+def enable_logging():
+    try:
+        mod = importlib.import_module(settings.SETTINGS_MODULE)
+    except ImportError, e:
+        raise ImportError, "Could not import settings '%s': %s" % \
+            (settings.SETTINGS_MODULE, e)
+    else:
+        log_filename = os.path.join(os.path.dirname(mod.__file__),
+                                                    "js_builder.log")
+        format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        logging.basicConfig(filename=log_filename,
+                                        level=logging.ERROR, format=format)
+        console = logging.StreamHandler()
+        console.setLevel(logging.ERROR)
+        formatter = logging.Formatter(format)
+        console.setFormatter(formatter)
+        logging.getLogger('').addHandler(console)
 
 def build_package(package_name, check_configuration=True, **options):
     """
@@ -392,14 +411,7 @@ def build_package(package_name, check_configuration=True, **options):
         check_config <bool>
     """
     # log file in the same dir as the project settings
-    try:
-        mod = importlib.import_module(settings.SETTINGS_MODULE)
-    except ImportError, e:
-        raise ImportError, "Could not import settings '%s': %s" % \
-            (settings.SETTINGS_MODULE, e)
-    log_filename = os.path.join(os.path.dirname(mod.__file__), 
-							"js_builder.log")
-    logging.basicConfig(filename=log_filename, level=logging.ERROR)
+    enable_logging()
 
     if check_configuration:
         check_config()
