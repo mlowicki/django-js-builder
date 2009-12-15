@@ -6,6 +6,7 @@ import logging
 
 from django.conf import settings
 from django import template
+from django.utils import importlib
 
 here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
@@ -381,6 +382,7 @@ def compress_package(package_name):
         logging.error("There was some problems with JavaScript compression")
         logging.error(output)
 
+
 def build_package(package_name, check_configuration=True, **options):
     """
     Build package with 'package_name' name
@@ -389,8 +391,16 @@ def build_package(package_name, check_configuration=True, **options):
         package_name <str>
         check_config <bool>
     """
-    log_filename = os.path.join(settings.JS_BUILDER_DEST, "js_builder.log")
+    # log file in the same dir as the project settings
+    try:
+        mod = importlib.import_module(settings.SETTINGS_MODULE)
+    except ImportError, e:
+        raise ImportError, "Could not import settings '%s': %s" % \
+            (settings.SETTINGS_MODULE, e)
+    log_filename = os.path.join(os.path.dirname(mod.__file__), 
+							"js_builder.log")
     logging.basicConfig(filename=log_filename, level=logging.ERROR)
+
     if check_configuration:
         check_config()
     if not package_name in settings.JS_BUILDER_PACKAGES:
