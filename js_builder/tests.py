@@ -531,6 +531,6 @@ class UtilsTest(SettingsTestCase):
                              "<script type='text/javascript' src='" +\
                              settings.MEDIA_URL + "p1.js'></script>")
         current_m_time = os.path.getmtime(package_file)
-        current_time = int(time.time())
+        current_time = time.time()
         self.failUnless(current_m_time <= current_time and
                                             current_time <= current_m_time +1)
