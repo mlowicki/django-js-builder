@@ -1,9 +1,6 @@
 #
 # Source: http://www.djangosnippets.org/snippets/1011/
 #
-# TODO:
-#   add functionality for removing attribute from settings
-#
 from django.conf import settings, LazySettings
 from django.core.management import call_command
 from django.db.models import loading
@@ -24,6 +21,15 @@ class TestSettingsManager(object):
     """
     def __init__(self):
         self._original_settings = {}
+
+    def remove(self, list):
+        for k in list:
+            if hasattr(settings, k):
+                self._original_settings.setdefault(k,  getattr(settings, k))
+            try:
+                delattr(settings, k)
+            except AttributeError:
+                delattr(settings._wrapped, k)
 
     def set(self, **kwargs):
         for k,v in kwargs.iteritems():

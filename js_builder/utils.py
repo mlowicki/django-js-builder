@@ -148,20 +148,18 @@ def check_config():
     """
     if not hasattr(settings, "JS_BUILDER_DEST"):
         logging.error("JS_BUILDER_DEST is not set")
-
+    else:
+        if not os.path.exists(settings.JS_BUILDER_DEST):
+            logging.error("Destination directory does not exist: %s" %
+                                                settings.JS_BUILDER_DEST)
     if not hasattr(settings, "JS_BUILDER_SOURCE"):
         logging.error("JS_BUILDER_SOURCE is not set")
-
+    else:
+        if not os.path.exists(settings.JS_BUILDER_SOURCE):
+            logging.error("Source directory does not exist: %s" %
+                                                settings.JS_BUILDER_SOURCE)
     if not hasattr(settings, "JS_BUILDER_PACKAGES"):
-        logging.error("JS_BUILDER_PACKAGES is not set")
-
-    if not os.path.exists(settings.JS_BUILDER_DEST):
-        loggging.error("Destination directory doesn't exists: %s" %
-                                                    settings.JS_BUILDER_DEST)
-    if not os.path.exists(settings.JS_BUILDER_SOURCE):
-        logging.error("Source directory doesn't exists: %s" %
-                                                    settings.JS_BUILDER_SOURCE)
-
+        logging.error("JS_BUILDER_PACKAGES is not set") 
 
 def get_file_dependencies(path):
     """

@@ -11,7 +11,8 @@ from django.conf import settings
 from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package,
                               get_file_dependencies, DependencyGraph,
-                              GraphEdge, GraphNode, topological_sorting)
+                              GraphEdge, GraphNode, topological_sorting,
+                              check_config)
 from js_builder.tests_utils import SettingsTestCase, check_last_log
 
 
