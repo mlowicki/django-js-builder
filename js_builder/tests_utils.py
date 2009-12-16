@@ -40,10 +40,10 @@ class TestSettingsManager(object):
     def revert(self):
         for k,v in self._original_settings.iteritems():
             if v == NO_SETTING:
-                if isinstance(settings, LazySettings):
-                    delattr(settings._wrapped, k)
-                else:
+                try:
                     delattr(settings, k)
+                except AttributeError: 
+                    delattr(settings._wrapped, k)
             else:
                 setattr(settings, k, v)
         if 'INSTALLED_APPS' in self._original_settings:
