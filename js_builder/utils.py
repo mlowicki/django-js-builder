@@ -10,6 +10,13 @@ from django.utils import importlib
 
 here = lambda x: os.path.join(os.path.abspath(os.path.dirname(__file__)), *x)
 
+try:
+    mod = importlib.import_module(settings.SETTINGS_MODULE)
+except ImportError, e:
+    raise ImportError, "Could not import settings '%s': %s" % \
+                                    (settings.SETTINGS_MODULE, e)
+LOG_FILENAME = os.path.join(os.path.dirname(mod.__file__), "js_builder.log")
+
 def match(pattern, name, root):
     """
     Check if name matches the given pattern
@@ -385,17 +392,9 @@ def compress_package(package_name):
 
 
 def enable_logging():
-    try:
-        mod = importlib.import_module(settings.SETTINGS_MODULE)
-    except ImportError, e:
-        raise ImportError, "Could not import settings '%s': %s" % \
-            (settings.SETTINGS_MODULE, e)
-    else:
-        log_filename = os.path.join(os.path.dirname(mod.__file__),
-                                                    "js_builder.log")
-        format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        logging.basicConfig(filename=log_filename,
-                                        level=logging.ERROR, format=format)
+        format = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s"
+        logging.basicConfig(filename=LOG_FILENAME, level=logging.ERROR,
+                                                                format=format)
         console = logging.StreamHandler()
         console.setLevel(logging.ERROR)
         formatter = logging.Formatter(format)

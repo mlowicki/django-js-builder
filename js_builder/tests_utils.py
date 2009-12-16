@@ -4,10 +4,12 @@
 # TODO:
 #   add functionality for removing attribute from settings
 #
-from django.conf import settings
+from django.conf import settings, LazySettings
 from django.core.management import call_command
 from django.db.models import loading
 from django.test import TestCase
+
+from js_builder.utils import LOG_FILENAME
 
 NO_SETTING = ('!', None)
 
@@ -38,7 +40,10 @@ class TestSettingsManager(object):
     def revert(self):
         for k,v in self._original_settings.iteritems():
             if v == NO_SETTING:
-                delattr(settings, k)
+                if isinstance(settings, LazySettings):
+                    delattr(settings._wrapped, k)
+                else:
+                    delattr(settings, k)
             else:
                 setattr(settings, k, v)
         if 'INSTALLED_APPS' in self._original_settings:
@@ -61,3 +66,21 @@ class SettingsTestCase(TestCase):
 
     def tearDown(self):
         self.settings_manager.revert()
+
+def check_last_log(msg):
+    """
+    Check if last message in logging file is msg
+    
+    Parameters:
+        msg <str>
+        
+    Return:
+        bool
+    """
+    f = open(LOG_FILENAME, "r")
+    last_line = f.readlines()[-1]
+    f.close()
+    if last_line.find(msg) == -1:
+        return False
+    else:
+        return True

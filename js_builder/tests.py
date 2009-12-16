@@ -12,7 +12,7 @@ from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package,
                               get_file_dependencies, DependencyGraph,
                               GraphEdge, GraphNode, topological_sorting)
-from js_builder.tests_utils import SettingsTestCase
+from js_builder.tests_utils import SettingsTestCase, check_last_log
 
 
 class UtilsTest(SettingsTestCase):
@@ -315,7 +315,8 @@ class UtilsTest(SettingsTestCase):
                 JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"))
 
         # wrong package name
-        self.failUnlessRaises(Exception, build_package, "wrong package name")
+        build_package("wrong package name")
+        self.failUnless(check_last_log("wrong package name"))
         self.failUnlessEqual(
                     os.listdir(os.path.join(self.rootTestsDir, "dest")), [])
 
@@ -476,8 +477,10 @@ class UtilsTest(SettingsTestCase):
         graph = DependencyGraph([GraphEdge("a", "b"),
                                  GraphEdge("b", "c"),
                                  GraphEdge("c", "a")])
-        self.failUnlessRaises(Exception, topological_sorting, graph)
-
+        topological_sorting(graph)
+        self.failUnless(check_last_log(
+                                    "Dependency graph has at least one cycle"))
+        
         graph = DependencyGraph([], [GraphNode("a"), GraphNode("b")])
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 2)
