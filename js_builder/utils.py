@@ -390,14 +390,16 @@ def compress_package(package_name):
 
 
 def enable_logging():
-        format = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s"
+        BASIC_FORMAT = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s" 
+        format = getattr(settings, "JS_BUILDER_FORMAT", BASIC_FORMAT)
         logging.basicConfig(filename=LOG_FILENAME, level=logging.ERROR,
                                                                 format=format)
-        console = logging.StreamHandler()
-        console.setLevel(logging.ERROR)
-        formatter = logging.Formatter(format)
-        console.setFormatter(formatter)
-        logging.getLogger('').addHandler(console)
+        if getattr(settings, "JS_BUILDER_CONSOLE", True):
+            console = logging.StreamHandler()
+            console.setLevel(logging.ERROR)
+            formatter = logging.Formatter(format)
+            console.setFormatter(formatter)
+            logging.getLogger('').addHandler(console)
 
 def build_package(package_name, check_configuration=True, **options):
     """

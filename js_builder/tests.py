@@ -27,6 +27,7 @@ class UtilsTest(SettingsTestCase):
         if os.path.isdir(self.rootTestsDir):
             shutil.rmtree(self.rootTestsDir)
         os.mkdir(self.rootTestsDir)
+        self.settings_manager.set(JS_BUILDER_CONSOLE=False)
 
     def tearDown(self):
         super(UtilsTest, self).tearDown()
