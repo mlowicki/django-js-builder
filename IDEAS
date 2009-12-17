@@ -66,7 +66,7 @@ info which packages were created during last request;
 2) Maybe building process can take too much time in some situations so there must be some option for
 disable builder maybe via GET parameter like: js_builder=0 or jsb=0;
 
-3) Create data streams for embedding image :
+3) Create data streams for embedding image : (there will be separate app for css building maybe ... )
 
 el.setStyle("background-image", "{% image_b64 bg.png %}");
 
@@ -74,10 +74,4 @@ is replaced by:
 
 el.setStyle("background-image", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARQA...");
 
-4) django command for manual building e.g. on public server,
-
-5) disable/enable code compressor.
-
-6) *** pattern. ** + files from root directory (DONE)
-
-7) graph for displaying JS files dependencies
+4) graph for displaying JS files dependencies
