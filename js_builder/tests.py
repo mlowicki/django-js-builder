@@ -3,6 +3,7 @@
 import os
 import shutil
 import time
+import urllib
 
 from django.test import TestCase
 from django import template
@@ -335,6 +336,22 @@ class UtilsTest(SettingsTestCase):
         f.close()
         build_package("p2")
 
+    def test_inline_js(self):
+        self.settings_manager.set(
+            JS_BUILDER_PACKAGES={},
+            JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"),
+            DEBUG=True)
+        os.mkdir(os.path.join(self.rootTestsDir, "source"))
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        content= "function t() { return True; }"
+        f.write(content)
+        f.close()
+        t = template.Template("{% load js_tags %}{% inline_js 'a.js' %}")
+        c = template.Context({})
+        html = "<script type='text/javascript' src='%s'>%s</script>" %\
+        (urllib.pathname2url(os.path.join(settings.MEDIA_URL, 'a.js')), content)
+        self.failUnlessEqual(t.render(c), html)
 
     def test_js_package_tag(self):
         """

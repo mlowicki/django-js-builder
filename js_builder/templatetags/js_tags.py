@@ -1,5 +1,7 @@
 
 import os
+from contextlib import closing
+import urllib
 
 from django import template
 from django.conf import settings
@@ -17,6 +19,28 @@ def js_package(parser, token):
         msg = '%r tag requires a single argument' % token.split_contents()[0]
         raise template.TemplateSyntaxError(msg)
     return JSPackageNode(package_name[1:-1])
+
+@register.tag
+def inline_js(parser, token):
+    try:
+        tag_name, file_name = token.split_contents()
+    except ValueError:
+        msg = '%r tag requires a single argument' % token.split_contents()[0]
+        raise template.TemplateSyntaxError(msg)
+    return InlineJSNode(file_name[1:-1])
+
+
+class InlineJSNode(template.Node):
+
+    def __init__(self, path):
+        self.path = path
+
+    def render(self, context):
+        with closing(open(os.path.join(settings.JS_BUILDER_SOURCE,
+                                                        self.path))) as script:
+            return "<script type='text/javascript' src='%s'>%s</script>" %\
+                (urllib.pathname2url(os.path.join(
+                                settings.MEDIA_URL, self.path)), script.read())
 
 
 class JSPackageNode(template.Node):
