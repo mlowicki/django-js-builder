@@ -1,6 +1,7 @@
 
 import os
 import re
+import sys
 import commands
 import logging
 
@@ -15,7 +16,29 @@ try:
 except ImportError, e:
     raise ImportError, "Could not import settings '%s': %s" % \
                                     (settings.SETTINGS_MODULE, e)
+                                    
 LOG_FILENAME = os.path.join(os.path.dirname(mod.__file__), "js_builder.log")
+BASIC_FORMAT = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s" 
+
+format = getattr(settings, "JS_BUILDER_FORMAT", BASIC_FORMAT)
+
+log_file = logging.StreamHandler(open(LOG_FILENAME, "a"))
+log_file.setLevel(logging.ERROR)
+formatter = logging.Formatter(format)
+log_file.setFormatter(formatter)
+
+log = logging.getLogger(__name__) # basic logger
+log.addHandler(log_file)
+logging.getLogger("yui compressor").addHandler(log_file)
+
+if getattr(settings, "JS_BUILDER_CONSOLE", True):
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)
+    formatter = logging.Formatter(format)
+    console.setFormatter(formatter)
+    log.addHandler(console)
+    logging.getLogger("yui compressor").addHandler(console)
+
 
 def match(pattern, name, root):
     """
@@ -146,20 +169,27 @@ def check_config():
     """
     Check if JS_BUILDER_* are set and correct
     """
+    success = True
     if not hasattr(settings, "JS_BUILDER_DEST"):
-        logging.error("JS_BUILDER_DEST is not set")
+        log.error("JS_BUILDER_DEST is not set")
+        success = False
     else:
         if not os.path.exists(settings.JS_BUILDER_DEST):
-            logging.error("Destination directory does not exist: %s" %
+            log.error("Destination directory does not exist: %s" %
                                                 settings.JS_BUILDER_DEST)
+            success = False
     if not hasattr(settings, "JS_BUILDER_SOURCE"):
-        logging.error("JS_BUILDER_SOURCE is not set")
+        log.error("JS_BUILDER_SOURCE is not set")
+        success = False
     else:
         if not os.path.exists(settings.JS_BUILDER_SOURCE):
-            logging.error("Source directory does not exist: %s" %
+            log.error("Source directory does not exist: %s" %
                                                 settings.JS_BUILDER_SOURCE)
+            success = False
     if not hasattr(settings, "JS_BUILDER_PACKAGES"):
-        logging.error("JS_BUILDER_PACKAGES is not set") 
+        log.error("JS_BUILDER_PACKAGES is not set")
+        success = False
+    return success
 
 def get_file_dependencies(path):
     """
@@ -326,8 +356,7 @@ def topological_sorting(graph):
             sorted_nodes.extend(removed_nodes)
 
     if graph.has_edge():
-        logger = logging.getLogger("topological sorting")
-        logger.error("Dependency graph has at least one cycle")
+        log.error("Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
         return sorted_nodes
@@ -385,21 +414,7 @@ def compress_package(package_name):
     command += " " + in_file + " -o " + out_file
     status, output = commands.getstatusoutput(command)
     if status != 0:
-        logger = loggging.getLogger("yui compressor")
-        logging.error(output)
-
-
-def enable_logging():
-        BASIC_FORMAT = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s" 
-        format = getattr(settings, "JS_BUILDER_FORMAT", BASIC_FORMAT)
-        logging.basicConfig(filename=LOG_FILENAME, level=logging.ERROR,
-                                                                format=format)
-        if getattr(settings, "JS_BUILDER_CONSOLE", True):
-            console = logging.StreamHandler()
-            console.setLevel(logging.ERROR)
-            formatter = logging.Formatter(format)
-            console.setFormatter(formatter)
-            logging.getLogger('').addHandler(console)
+        loggging.getLogger("yui compressor").error(output)
 
 def build_package(package_name, check_configuration=True, **options):
     """
@@ -409,13 +424,11 @@ def build_package(package_name, check_configuration=True, **options):
         package_name <str>
         check_config <bool>
     """
-    # log file in the same dir as the project settings
-    enable_logging()
-
     if check_configuration:
-        check_config()
+        if check_config() == False:
+            return
     if not package_name in settings.JS_BUILDER_PACKAGES:
-        logging.error("Unknown package: %s" % package_name)
+        log.error("Unknown package: %s" % package_name)
     else:
         compress = options.get("compress", False)
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
@@ -457,6 +470,6 @@ def build_all_packages(**options):
     """
     Build all packages from JS_BUILDER_PACKAGES
     """
-    check_config()
-    for package_name in settings.JS_BUILDER_PACKAGES:
-        build_package(package_name, False, **options)
+    if check_config():
+        for package_name in settings.JS_BUILDER_PACKAGES:
+            build_package(package_name, False, **options)
