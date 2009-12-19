@@ -22,23 +22,26 @@ BASIC_FORMAT = "%(asctime)s - %(name)-20s - %(levelname)s - %(message)s"
 
 format = getattr(settings, "JS_BUILDER_FORMAT", BASIC_FORMAT)
 
-log_file = logging.StreamHandler(open(LOG_FILENAME, "a"))
-log_file.setLevel(logging.ERROR)
-formatter = logging.Formatter(format)
-log_file.setFormatter(formatter)
+LOG_FILE = logging.StreamHandler(open(LOG_FILENAME, "a"))
+LOG_FILE.setLevel(logging.ERROR)
+LOG_FILE.setFormatter(logging.Formatter(format))
 
-log = logging.getLogger(__name__) # basic logger
-log.addHandler(log_file)
-logging.getLogger("yui compressor").addHandler(log_file)
+CONSOLE = logging.StreamHandler()
+CONSOLE.setLevel(logging.ERROR)
+CONSOLE.setFormatter(logging.Formatter(format))
 
-if getattr(settings, "JS_BUILDER_CONSOLE", True):
-    console = logging.StreamHandler()
-    console.setLevel(logging.ERROR)
-    formatter = logging.Formatter(format)
-    console.setFormatter(formatter)
-    log.addHandler(console)
-    logging.getLogger("yui compressor").addHandler(console)
+STREAM_HANDLERS = [CONSOLE, LOG_FILE]
 
+def log(logger_name, msg):
+    for sh in STREAM_HANDLERS:
+        logging.getLogger(logger_name).removeHandler(sh)
+
+    for sh in getattr(settings, "JS_BUILDER_LOGGING", [LOG_FILE]):
+        logging.getLogger(logger_name).addHandler(sh)
+    logging.getLogger(logger_name).error(msg)
+
+    if getattr(settings, "JS_BUILDER_EXCEPTION", False):
+        raise Exception("%s : %s" % (logger_name, msg))
 
 def match(pattern, name, root):
     """
@@ -171,23 +174,23 @@ def check_config():
     """
     success = True
     if not hasattr(settings, "JS_BUILDER_DEST"):
-        log.error("JS_BUILDER_DEST is not set")
+        log("check_config", "JS_BUILDER_DEST is not set")
         success = False
     else:
         if not os.path.exists(settings.JS_BUILDER_DEST):
-            log.error("Destination directory does not exist: %s" %
+            log("check_config", "Destination directory does not exist: %s" %
                                                 settings.JS_BUILDER_DEST)
             success = False
     if not hasattr(settings, "JS_BUILDER_SOURCE"):
-        log.error("JS_BUILDER_SOURCE is not set")
+        log("check_config", "JS_BUILDER_SOURCE is not set")
         success = False
     else:
         if not os.path.exists(settings.JS_BUILDER_SOURCE):
-            log.error("Source directory does not exist: %s" %
+            log("check_config", "Source directory does not exist: %s" %
                                                 settings.JS_BUILDER_SOURCE)
             success = False
     if not hasattr(settings, "JS_BUILDER_PACKAGES"):
-        log.error("JS_BUILDER_PACKAGES is not set")
+        log("check_config", "JS_BUILDER_PACKAGES is not set")
         success = False
     return success
 
@@ -205,8 +208,15 @@ def get_file_dependencies(path):
         if r == None:
             break
         else:
-            results.append(os.path.join(
-                    settings.JS_BUILDER_SOURCE, r.groupdict()["file"]))
+            relative_path = r.groupdict()["file"]
+            absolute_path = os.path.join(settings.JS_BUILDER_SOURCE,
+                                         relative_path)
+            if not os.path.exists(absolute_path):
+                msg = "File %s (%s) which is required by %s cannot be found" %\
+                (relative_path, absolute_path, path)
+                log("get_file_dependencies", msg)
+            else:
+                results.append(absolute_path)
     f.close()
     return results
 
@@ -356,7 +366,7 @@ def topological_sorting(graph):
             sorted_nodes.extend(removed_nodes)
 
     if graph.has_edge():
-        log.error("Dependency graph has at least one cycle")
+        log("topological_sorting", "Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
         return sorted_nodes
@@ -414,7 +424,7 @@ def compress_package(package_name):
     command += " " + in_file + " -o " + out_file
     status, output = commands.getstatusoutput(command)
     if status != 0:
-        loggging.getLogger("yui compressor").error(output)
+        log("yui compressor", error(output))
 
 def build_package(package_name, check_configuration=True, **options):
     """
@@ -428,7 +438,7 @@ def build_package(package_name, check_configuration=True, **options):
         if check_config() == False:
             return
     if not package_name in settings.JS_BUILDER_PACKAGES:
-        log.error("Unknown package: %s" % package_name)
+        log("build_package", "Unknown package: %s" % package_name)
     else:
         compress = options.get("compress", False)
         package_cfg = settings.JS_BUILDER_PACKAGES[package_name]

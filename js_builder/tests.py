@@ -455,6 +455,10 @@ class UtilsTest(SettingsTestCase):
         f.write("//require c.js\n")
         f.write("// comment\n")
         f.close()
+        f = open(os.path.join(self.rootTestsDir, "b.js"), "w")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "c.js"), "w")
+        f.close()
         dependencies = get_file_dependencies(
                                     os.path.join(self.rootTestsDir, "a.js"))
         self.failUnlessEqual(len(dependencies), 2)
