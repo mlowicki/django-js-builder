@@ -13,7 +13,7 @@ from js_builder.utils import (is_regexp, is_special_regexp, find_in_dir, here,
                               find, find_package_files, build_package,
                               get_file_dependencies, DependencyGraph,
                               GraphEdge, GraphNode, topological_sorting,
-                              check_config)
+                              check_config, LOG_FILE)
 from js_builder.tests_utils import SettingsTestCase, check_last_log
 
 
@@ -28,7 +28,8 @@ class UtilsTest(SettingsTestCase):
         if os.path.isdir(self.rootTestsDir):
             shutil.rmtree(self.rootTestsDir)
         os.mkdir(self.rootTestsDir)
-        self.settings_manager.set(JS_BUILDER_CONSOLE=False)
+        self.settings_manager.set(JS_BUILDER_LOGGING=[LOG_FILE])
+        self.settings_manager.set(JS_BUILDER_EXCEPTION=False)
 
     def tearDown(self):
         super(UtilsTest, self).tearDown()
