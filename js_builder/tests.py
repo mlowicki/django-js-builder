@@ -509,6 +509,31 @@ class UtilsTest(SettingsTestCase):
         self.failUnless("a" in results)
         self.failUnless("b" in results)
 
+    def test_dont_update_output_when_error(self):
+        """
+        Check if output file isn't updated when there was some errors during
+        the building process
+        """
+        self.settings_manager.set(
+            JS_BUILDER_PACKAGES={"p1": ["[a-z]\.js"]},
+            JS_BUILDER_DEST=os.path.join(self.rootTestsDir, "dest"),
+            JS_BUILDER_SOURCE=os.path.join(self.rootTestsDir, "source"),
+            DEBUG=True)
+        os.mkdir(os.path.join(self.rootTestsDir, "source"))
+        os.mkdir(os.path.join(self.rootTestsDir, "dest"))
+
+        f = open(os.path.join(self.rootTestsDir, "source", "a.js"), "w")
+        f.write("// require b.js")
+        f.close()
+        f = open(os.path.join(self.rootTestsDir, "source", "b.js"), "w")
+        f.write("// require a.js")
+        f.close()
+        t = template.Template("{% load js_tags %}{% js_package 'p1' %}")
+        c = template.Context({})
+        t.render(c)
+        self.failIf(os.path.exists(os.path.join(
+                                        self.rootTestsDir, "dest", "p1.js")))
+
     def test_package_needs_rebuilding(self):
         """
         """
