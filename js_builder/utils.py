@@ -214,7 +214,7 @@ def get_file_dependencies(path):
             if not os.path.exists(absolute_path):
                 msg = "File %s (%s) which is required by %s cannot be found" %\
                 (relative_path, absolute_path, path)
-                log("get_file_dependencies", msg)
+                raise Exception("get_file_dependencies", msg)
             else:
                 results.append(absolute_path)
     f.close()
@@ -366,7 +366,8 @@ def topological_sorting(graph):
             sorted_nodes.extend(removed_nodes)
 
     if graph.has_edge():
-        log("topological_sorting", "Dependency graph has at least one cycle")
+        raise Exception(
+            "topological_sorting", "Dependency graph has at least one cycle")
     else:
         sorted_nodes.reverse()
         return sorted_nodes
@@ -440,41 +441,44 @@ def build_package(package_name, check_configuration=True, **options):
     if not package_name in settings.JS_BUILDER_PACKAGES:
         log("build_package", "Unknown package: %s" % package_name)
     else:
-        compress = options.get("compress", False)
-        package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
-        files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
-        dependencies = get_package_dependencies(
-            map(lambda f: os.path.join(settings.JS_BUILDER_SOURCE, f), files))
+        try:
+            compress = options.get("compress", False)
+            package_cfg = settings.JS_BUILDER_PACKAGES[package_name]
+            files = find_package_files(package_cfg, settings.JS_BUILDER_SOURCE)
+            dependencies = get_package_dependencies(map(lambda f: os.path.join(
+                                        settings.JS_BUILDER_SOURCE, f), files))
 
-        if package_needs_rebuilding(get_unique_files(dependencies),
-                                    package_name):
-            edges = []
-            package_file = open(os.path.join(
-                        settings.JS_BUILDER_DEST, package_name + ".js"), "w")
-            isolated_nodes = []
-            for k in dependencies:
-                if len(dependencies[k]) == 0:
-                    isolated_nodes.append(GraphNode(k, [], []))
-                else:
-                    for node in dependencies[k]:
-                        edges.append(GraphEdge(k, node))
-            graph = DependencyGraph(edges, isolated_nodes)
-            sorted_files = topological_sorting(graph)
+            if package_needs_rebuilding(get_unique_files(dependencies),
+                                        package_name):
+                edges = []
+                isolated_nodes = []
+                for k in dependencies:
+                    if len(dependencies[k]) == 0:
+                        isolated_nodes.append(GraphNode(k, [], []))
+                    else:
+                        for node in dependencies[k]:
+                            edges.append(GraphEdge(k, node))
+                graph = DependencyGraph(edges, isolated_nodes)
+                sorted_files = topological_sorting(graph)
 
-            for i in range(len(sorted_files)):
-                f = open(sorted_files[i], "r")
-                package_file.write(f.read())
-                if i != len(sorted_files) -1:
-                    package_file.write("\n")
-                f.close()
-            package_file.close()
+                package_file = open(os.path.join(settings.JS_BUILDER_DEST,
+                                                 package_name + ".js"), "w")
+                for i in range(len(sorted_files)):
+                    f = open(sorted_files[i], "r")
+                    package_file.write(f.read())
+                    if i != len(sorted_files) -1:
+                        package_file.write("\n")
+                    f.close()
+                package_file.close()
 
-            if compress:
-                compress_package(package_name)
-        else:
-            if compress and not os.path.exists(os.path.join(
+                if compress:
+                    compress_package(package_name)
+            else:
+                if compress and not os.path.exists(os.path.join(
                         settings.JS_BUILDER_DEST, package_name + "-min.js")):
-                compress_package(package_name)
+                    compress_package(package_name)
+        except Exception, e:
+            log(*e)
 
 def build_all_packages(**options):
     """

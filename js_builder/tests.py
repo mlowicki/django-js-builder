@@ -501,10 +501,8 @@ class UtilsTest(SettingsTestCase):
         graph = DependencyGraph([GraphEdge("a", "b"),
                                  GraphEdge("b", "c"),
                                  GraphEdge("c", "a")])
-        topological_sorting(graph)
-        self.failUnless(check_last_log(
-                                    "Dependency graph has at least one cycle"))
-        
+        self.failUnlessRaises(Exception, topological_sorting, graph)
+
         graph = DependencyGraph([], [GraphNode("a"), GraphNode("b")])
         results = topological_sorting(graph)
         self.failUnlessEqual(len(results), 2)
