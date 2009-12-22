@@ -24,12 +24,16 @@ Installation
             "ui": ["\*\*\*/ui/.\*\.js"]
     	}
 
-#. In each JavaScript file we can define which other files are required e.g.::
+#. In the template add::
 
-	// require core.js
-	// require ui.js
+    	{% load js_tags %}
+    	{% js_package 'core' %}
 
-   Files `core.js` and `ui.js` will be added before that file so all dependencies will be met. After finding all depenendencies, files are concatenated in the right order and saved to the new JavaScript file. What are benefits of that? It reduces http request on site. This is important step to speed up your web site. Steve Souders describes this in “High Performance Web Sites” book. 
+   When template will be rendered this will we replaced by::
+
+   	<script type='text/javascript' src='{{ MEDIA_URL }}p1.js'>
+
+   Also system will check if some files from package `p1` were modified since last building and if there were some changes `JS_builder` will rebuild that package. Then these JavaScript packages can be compressed to minimize size of the files. By default YUI compressor is used.
 
 Configuration
 =============
