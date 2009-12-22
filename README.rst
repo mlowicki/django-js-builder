@@ -29,6 +29,8 @@ Installation
 	// require core.js
 	// require ui.js
 
+   Files `core.js` and `ui.js` will be added before that file so all dependencies will be met. After finding all depenendencies, files are concatenated in the right order and saved to the new JavaScript file. What are benefits of that? It reduces http request on site. This is important step to speed up your web site. Steve Souders describes this in "High Performance Web Sites" book. 
+
 #. In the template add::
 
     	{% load js_tags %}
