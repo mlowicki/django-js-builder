@@ -1,6 +1,3 @@
-JS_builder
-==========
-
 Installation
 ============
 #. Add the `js_builder` directory to your Python path.
@@ -40,9 +37,4 @@ Installation
 
    Also system will check if some files from package `p1` were modified since last building and if there were some changes `JS_builder` will rebuild that package. Then these JavaScript packages can be compressed to minimize size of the files. By default YUI compressor is used.
 
-Configuration
-=============
-
-Error logging
--------------
 
