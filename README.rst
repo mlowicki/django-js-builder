@@ -1,3 +1,8 @@
+JS_builder
+==========
+
+`JS_builder` is a JavaScript dependency management tool. We can define for all files dependencies which are required e.g. file core.js must be add before all other files because it contains main namespace. Files are concatenated in the right order and minimize. When template are rendered and some packages must be added to that page system checks if there were some modifications in files from package and rebuild it automatically.
+
 Installation
 ============
 #. Add the `js_builder` directory to your Python path.
@@ -37,4 +42,9 @@ Installation
 
    Also system will check if some files from package `p1` were modified since last building and if there were some changes `JS_builder` will rebuild that package. Then these JavaScript packages can be compressed to minimize size of the files. By default YUI compressor is used.
 
+Configuration
+=============
+
+Error logging
+-------------
 
