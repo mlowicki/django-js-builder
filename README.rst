@@ -48,3 +48,18 @@ Configuration
 Error logging
 -------------
 
+`JS_builder` uses logging_ module from the python standard library. By default all errors will be outputed to the log file (`js_builder.log` which will be placed in the same directory as the `settings.py`).
+Also console can be added as the place where errors will be outputed. For example::
+
+	from js_builder.utils import LOG_FILE, CONSOLE
+
+	JS_BUILDER_LOGGING = [LOG_FILE, CONSOLE]
+
+.. _logging : http://docs.python.org/library/logging.html
+
+Format of the output can be also customized by set `JS_BUILDER_FORMAT` setting e.g.::
+
+	JS_BUILDER_FORMAT = “%(levelname)s > %(message)s”
+
+There is also `JS_BUILDER_EXCEPTION` settings which is by default set to False. When it's True after errors, exceptions will be raised.
+
