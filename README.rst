@@ -24,6 +24,11 @@ Installation
             "ui": ["\*\*\*/ui/.\*\.js"]
     	}
 
+#. In each JavaScript file we can define which other files are required e.g.::
+
+	// require core.js
+	// require ui.js
+
 #. In the template add::
 
     	{% load js_tags %}
