@@ -59,7 +59,7 @@ Also console can be added as the place where errors will be outputed. For exampl
 
 Format of the output can be also customized by set `JS_BUILDER_FORMAT` setting e.g.::
 
-	JS_BUILDER_FORMAT = “%(levelname)s > %(message)s”
+	JS_BUILDER_FORMAT = "%(levelname)s > %(message)s"
 
 There is also `JS_BUILDER_EXCEPTION` settings which is by default set to False. When it's True after errors, exceptions will be raised.
 
