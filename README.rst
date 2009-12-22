@@ -13,6 +13,17 @@ Installation
     
 	JS_BUILDER_SOURCE = os.path.join(os.path.dirname(__file__, "media", "js", "internal")
 
+#. Add a setting `JS_BUILDER_DEST` with absolute path to the directory with builded JavaScript packages e.g.::
+   	
+	JS_BUILDER_DEST = os.path.join(os.path.dirname(__file__), "media", "js", "public")
+
+#. set `JS_BUILDER_PACKAGES` setting. It's a dictionary with definition of packages. For example::
+   
+	JS_BUILDER_PACKAGES = {
+            "core": ["core.js", "ajax.js", "dom.js"],
+            "ui": ["\*\*\*/ui/.\*\.js"]
+    	}
+
 
 Configuration
 =============
